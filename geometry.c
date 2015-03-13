@@ -69,6 +69,8 @@ static double point_norm(const struct point *p)
 }
 
 /*
+ * According to the original code, "signed area/determinant thing"; let's just
+ * stick with that
  */
 static double point_cross(const struct point *p, const struct point *q)
 {
