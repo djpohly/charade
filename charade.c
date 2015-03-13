@@ -40,7 +40,7 @@ static int init_touch_device(struct kbd_state *state, int id)
 			if (tci->type == XITouchClass &&
 					tci->mode == XIDirectTouch) {
 				state->input_dev = di[i].deviceid;
-				state->ntouches = tci->num_touches;
+				state->nslots = tci->num_touches;
 				goto done;
 			}
 		}
@@ -55,18 +55,18 @@ done:
 
 	// Allocate space for keeping track of currently held touches and the
 	// corresponding XInput touch event IDs
-	state->touches = malloc(state->ntouches * sizeof(state->touches[0]));
-	state->touchids = malloc(state->ntouches * sizeof(state->touchids[0]));
+	state->touchpts = malloc(state->nslots * sizeof(state->touchpts[0]));
+	state->touchids = malloc(state->nslots * sizeof(state->touchids[0]));
 
-	if (!state->touches || !state->touchids) {
+	if (!state->touchpts || !state->touchids) {
 		fprintf(stderr, "Failed to allocate touches/ids\n");
 		free(state->touchids);
-		free(state->touches);
+		free(state->touchpts);
 		return 1;
 	}
 
 	// Mark as unused to start
-	for (i = 0; i < state->ntouches; i++)
+	for (i = 0; i < state->nslots; i++)
 		state->touchids[i] = -1;
 
 	return 0;
@@ -78,7 +78,7 @@ done:
 static void destroy_touch_device(struct kbd_state *state)
 {
 	free(state->touchids);
-	free(state->touches);
+	free(state->touchpts);
 }
 
 /*
@@ -273,11 +273,11 @@ static void get_centroid(struct kbd_state *state, double *cx, double *cy)
 
 	n = 0;
 	tx = ty = 0;
-	for (i = 0; i < state->ntouches; i++) {
+	for (i = 0; i < state->nslots; i++) {
 		if (state->touchids[i] < 0)
 			continue;
-		tx += state->touches[i].x;
-		ty += state->touches[i].y;
+		tx += state->touchpts[i].x;
+		ty += state->touchpts[i].y;
 		n++;
 	}
 	*cx = tx / n;
@@ -294,18 +294,18 @@ static void get_bbox_center(struct kbd_state *state, double *cx, double *cy)
 
 	xmin = ymin = 9999999;
 	xmax = ymax = 0;
-	for (i = 0; i < state->ntouches; i++) {
+	for (i = 0; i < state->nslots; i++) {
 		if (state->touchids[i] < 0)
 			continue;
 
-		if (state->touches[i].x < xmin)
-			xmin = state->touches[i].x;
-		if (state->touches[i].x > xmax)
-			xmax = state->touches[i].x;
-		if (state->touches[i].y < ymin)
-			ymin = state->touches[i].y;
-		if (state->touches[i].y > ymax)
-			ymax = state->touches[i].y;
+		if (state->touchpts[i].x < xmin)
+			xmin = state->touchpts[i].x;
+		if (state->touchpts[i].x > xmax)
+			xmax = state->touchpts[i].x;
+		if (state->touchpts[i].y < ymin)
+			ymin = state->touchpts[i].y;
+		if (state->touchpts[i].y > ymax)
+			ymax = state->touchpts[i].y;
 	}
 
 	*cx = (xmin + xmax) / 2;
@@ -388,13 +388,13 @@ static void update_display(struct kbd_state *state)
 	// Draw touches
 	XSetForeground(state->dpy, state->gc, TOUCH_COLOR);
 	touches = 0;
-	for (i = 0; i < state->ntouches; i++) {
+	for (i = 0; i < state->nslots; i++) {
 		if (state->touchids[i] < 0)
 			continue;
 		touches++;
 		XFillArc(state->dpy, state->win, state->gc,
-				state->touches[i].x - TOUCH_RADIUS,
-				state->touches[i].y - TOUCH_RADIUS,
+				state->touchpts[i].x - TOUCH_RADIUS,
+				state->touchpts[i].y - TOUCH_RADIUS,
 				2 * TOUCH_RADIUS, 2 * TOUCH_RADIUS,
 				0, 360 * 64);
 	}
@@ -425,7 +425,7 @@ static void update_display(struct kbd_state *state)
 static int get_touch_index(struct kbd_state *state, int id)
 {
 	int i;
-	for (i = 0; i < state->ntouches; i++)
+	for (i = 0; i < state->nslots; i++)
 		if (state->touchids[i] == id)
 			return i;
 	return -1;
@@ -443,8 +443,8 @@ static int add_touch(struct kbd_state *state, int id, double x, double y)
 
 	// Fill it out
 	state->touchids[i] = id;
-	state->touches[i].x = x;
-	state->touches[i].y = y;
+	state->touchpts[i].x = x;
+	state->touchpts[i].y = y;
 	return 0;
 }
 
@@ -493,8 +493,8 @@ static int handle_xi_event(struct kbd_state *state, XIDeviceEvent *ev)
 			assert(idx >= 0);
 
 			// Update touch position
-			state->touches[idx].x = ev->event_x;
-			state->touches[idx].y = ev->event_y;
+			state->touchpts[idx].x = ev->event_x;
+			state->touchpts[idx].y = ev->event_y;
 			break;
 
 		default:

@@ -36,9 +36,9 @@ struct kbd_state {
 	XftFont *font;
 	XftDraw *draw;
 	XftColor textclr;
-	struct point *touches;
+	struct point *touchpts;
 	int *touchids;
-	int ntouches;
+	int nslots;
 	int xi_opcode;
 	int input_dev;
 	int shutdown;
