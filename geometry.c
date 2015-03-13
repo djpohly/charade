@@ -8,6 +8,7 @@
  */
 
 #include <math.h>
+#include <assert.h>
 
 #include "geometry.h"
 
@@ -209,14 +210,16 @@ static void circle_1point(const struct point *pts, int n, struct point p,
 
 struct point points_enclosing_center(const struct point *pts, int n)
 {
+	assert(n >= 1);
+
 	int i;
 	struct circle c;
 
 	// Skip the shuffle, assume it's random/small enough
 
-	c.c.x = c.c.y = c.r = 0;
-	for (i = 0; i < n; i++) {
-		if (c.r == 0 || !circle_contains(&c, pts[i]))
+	circle_1point(pts, 1, pts[0], &c);
+	for (i = 1; i < n; i++) {
+		if (!circle_contains(&c, pts[i]))
 			circle_1point(pts, i, pts[i], &c);
 	}
 
