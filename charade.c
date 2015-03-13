@@ -264,7 +264,7 @@ static void cleanup_draw(struct kbd_state *state)
 /*
  * Gets the centroid of the touch points
  */
-static void get_centroid(struct kbd_state *state, double *cx, double *cy)
+static void get_centroid(struct kbd_state *state, struct point *c)
 {
 	int i;
 	double tx, ty;
@@ -274,14 +274,14 @@ static void get_centroid(struct kbd_state *state, double *cx, double *cy)
 		tx += state->touchpts[i].x;
 		ty += state->touchpts[i].y;
 	}
-	*cx = tx / state->touches;
-	*cy = ty / state->touches;
+	c->x = tx / state->touches;
+	c->y = ty / state->touches;
 }
 
 /*
  * Gets the center of the bounding box of the touch points
  */
-static void get_bbox_center(struct kbd_state *state, double *cx, double *cy)
+static void get_bbox_center(struct kbd_state *state, struct point *c)
 {
 	int i;
 	double xmin, xmax, ymin, ymax;
@@ -299,67 +299,57 @@ static void get_bbox_center(struct kbd_state *state, double *cx, double *cy)
 			ymax = state->touchpts[i].y;
 	}
 
-	*cx = (xmin + xmax) / 2;
-	*cy = (ymin + ymax) / 2;
+	c->x = (xmin + xmax) / 2;
+	c->y = (ymin + ymax) / 2;
 }
 
-static double norm(double px, double py)
+static double point_norm(const struct point *p)
 {
-	return px*px + py*py;
+	return p->x*p->x + p->y*p->y;
 }
 
-static double distance(double px, double py, double qx, double qy)
+static double point_distance(const struct point *p, const struct point *q)
 {
-	double dx = px - qx;
-	double dy = py - qy;
-	return sqrt(norm(dx, dy));
+	struct point d;
+	d.x = p->x - q->x;
+	d.y = p->y - q->y;
+	return sqrt(point_norm(&d));
 }
 
-static int contained(double px, double py, double cx, double cy, double r)
+static int circle_contains(const struct circle *c, const struct point *p)
 {
-	return distance(px, py, cx, cy) <= r;
+	return point_distance(&c->c, p) <= c->r;
 }
 
 /*
  * Makes a circle from a diameter
  */
-static void make_diameter(double px, double py, double qx, double qy,
-		double *cx, double *cy, double *r)
+static void make_diameter(const struct point *p, const struct point *q,
+		struct circle *c)
 {
-	*cx = (px + qx) / 2;
-	*cy = (py + qy) / 2;
-	*r = distance(px, py, qx, qy) / 2;
+	c->c.x = (p->x + q->x) / 2;
+	c->c.y = (p->y + q->y) / 2;
+	c->r = point_distance(p, q) / 2;
 }
 
 /*
  * Makes a circumcircle from three points
  */
-static void make_circumcircle(double px, double py, double qx, double qy,
-		double rx, double ry,
-		double *cx, double *cy, double *r)
+static void make_circumcircle(const struct point *p, const struct point *q,
+		const struct point *r, struct circle *c)
 {
-	double d = (px * (qy - ry) + qx * (ry - py) + rx * (py - qy)) * 2;
+	double d = (p->x * (q->y - r->y) + q->x * (r->y - p->y) + r->x * (p->y - q->y)) * 2;
 	if (d == 0) {
-		*cx = *cy = *r = 0;
+		c->c.x = c->c.y = c->r = 0;
 		return;
 	}
-	*cx = (norm(px, py) * (qy - ry) + norm(qx, qy) * (ry - py) +
-			norm(rx, ry) * (py - qy)) / d;
-	*cy = (norm(px, py) * (rx - qx) + norm(qx, qy) * (px - rx) +
-			norm(rx, ry) * (qx - px)) / d;
-	*r = distance(px, py, *cx, *cy);
-}
-
-/*
- * Two points case
- */
-static void make_circle_2(struct kbd_state *state, double px, double py,
-		double qx, double qy)
-{
-	double tx, ty, tr;
-	make_diameter(px, py, qx, qy, &tx, &ty, &tr);
-	// XXX left off here
-	(void) state;
+	c->c.x = (point_norm(p) * (q->y - r->y) +
+			point_norm(q) * (r->y - p->y) +
+			point_norm(r) * (p->y - q->y)) / d;
+	c->c.y = (point_norm(p) * (r->x - q->x) +
+			point_norm(q) * (p->x - r->x) +
+			point_norm(r) * (q->x - p->x)) / d;
+	c->r = point_distance(p, &c->c);
 }
 
 /*
@@ -368,7 +358,7 @@ static void make_circle_2(struct kbd_state *state, double px, double py,
 static void update_display(struct kbd_state *state)
 {
 	int i;
-	double cx, cy;
+	struct point c;
 	char str[256];
 	Screen *scr = DefaultScreenOfDisplay(state->dpy);
 	int sheight = HeightOfScreen(scr);
@@ -393,14 +383,14 @@ static void update_display(struct kbd_state *state)
 	if (!state->touches)
 		return;
 
-	get_centroid(state, &cx, &cy);
+	get_centroid(state, &c);
 
 	XSetForeground(state->dpy, state->gc, ANALYSIS_COLOR);
 	XFillRectangle(state->dpy, state->win, state->gc,
-			cx - CENTER_RADIUS, cy - CENTER_RADIUS,
+			c.x - CENTER_RADIUS, c.y - CENTER_RADIUS,
 			2 * CENTER_RADIUS, 2 * CENTER_RADIUS);
 
-	i = snprintf(str, 256, "C: (%.1f, %.1f)", cx, cy);
+	i = snprintf(str, 256, "C: (%.1f, %.1f)", c.x, c.y);
 	XftDrawStringUtf8(state->draw, &state->textclr, state->font, 0, sheight - 60,
 			(XftChar8 *) str, i);
 }
