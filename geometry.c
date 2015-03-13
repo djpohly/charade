@@ -175,12 +175,10 @@ static void circle_2points(const struct point *pts, int n,
 			continue;
 
 		struct point pc = point_sub(cc.c, p);
-		struct point p1 = point_sub(temp.c, p);
-		struct point p2 = point_sub(temp2.c, p);;
 
-		if (cross > 0 && (temp.r == 0 || point_cross(pq, pc) > point_cross(pq, p1)))
+		if (cross > 0 && (temp.r == 0 || point_cross(pq, pc) > point_cross(pq, point_sub(temp.c, p))))
 			temp = cc;
-		else if (cross < 0 && (temp2.r == 0 || point_cross(pq, pc) < point_cross(pq, p2)))
+		else if (cross < 0 && (temp2.r == 0 || point_cross(pq, pc) < point_cross(pq, point_sub(temp2.c, p))))
 			temp2 = cc;
 	}
 	if (temp2.r == 0)
@@ -191,4 +189,37 @@ static void circle_2points(const struct point *pts, int n,
 		*c = temp;
 	else
 		*c = temp2;
+}
+
+static void circle_1point(const struct point *pts, int n, struct point p,
+		struct circle *c)
+{
+	int i;
+	c->c = p;
+	c->r = 0;
+
+	for (i = 0; i < n; i++) {
+		if (circle_contains(c, pts[i]))
+			continue;
+		if (c->r == 0)
+			circle_from_diameter(p, pts[i], c);
+		else
+			circle_2points(pts, i, p, pts[i], c);
+	}
+}
+
+struct point points_enclosing_center(const struct point *pts, int n)
+{
+	int i;
+	struct circle c;
+
+	// Skip the shuffle, assume it's random/small enough
+
+	c.c.x = c.c.y = c.r = 0;
+	for (i = 0; i < n; i++) {
+		if (c.r == 0 || !circle_contains(&c, pts[i]))
+			circle_1point(pts, i, pts[i], &c);
+	}
+
+	return c.c;
 }
