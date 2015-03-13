@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <inttypes.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -259,99 +258,6 @@ static void cleanup_draw(struct kbd_state *state)
 	XftColorFree(state->dpy, state->xvi.visual, state->cmap, &state->textclr);
 	XftDrawDestroy(state->draw);
 	XFreeGC(state->dpy, state->gc);
-}
-
-/*
- * Gets the centroid of the touch points
- */
-static void points_centroid(const struct point *pts, int n, struct point *c)
-{
-	int i;
-	double tx, ty;
-
-	tx = ty = 0;
-	for (i = 0; i < n; i++) {
-		tx += pts[i].x;
-		ty += pts[i].y;
-	}
-	c->x = tx / n;
-	c->y = ty / n;
-}
-
-/*
- * Gets the center of the bounding box of the touch points
- */
-static void points_bbox_center(const struct point *pts, int n, struct point *c)
-{
-	int i;
-	struct point min, max;
-
-	if (n < 1)
-		return;
-
-	min = max = pts[0];
-	for (i = 1; i < n; i++) {
-		if (pts[i].x < min.x)
-			min.x = pts[i].x;
-		if (pts[i].x > max.x)
-			max.x = pts[i].x;
-		if (pts[i].y < min.y)
-			min.y = pts[i].y;
-		if (pts[i].y > max.y)
-			max.y = pts[i].y;
-	}
-
-	c->x = (min.x + max.x) / 2;
-	c->y = (min.y + max.y) / 2;
-}
-
-static double point_norm(const struct point *p)
-{
-	return p->x*p->x + p->y*p->y;
-}
-
-static double point_distance(const struct point *p, const struct point *q)
-{
-	struct point d;
-	d.x = p->x - q->x;
-	d.y = p->y - q->y;
-	return sqrt(point_norm(&d));
-}
-
-static int circle_contains(const struct circle *c, const struct point *p)
-{
-	return point_distance(&c->c, p) <= c->r;
-}
-
-/*
- * Makes a circle from a diameter
- */
-static void make_diameter(const struct point *p, const struct point *q,
-		struct circle *c)
-{
-	c->c.x = (p->x + q->x) / 2;
-	c->c.y = (p->y + q->y) / 2;
-	c->r = point_distance(p, q) / 2;
-}
-
-/*
- * Makes a circumcircle from three points
- */
-static void make_circumcircle(const struct point *p, const struct point *q,
-		const struct point *r, struct circle *c)
-{
-	double d = (p->x * (q->y - r->y) + q->x * (r->y - p->y) + r->x * (p->y - q->y)) * 2;
-	if (d == 0) {
-		c->c.x = c->c.y = c->r = 0;
-		return;
-	}
-	c->c.x = (point_norm(p) * (q->y - r->y) +
-			point_norm(q) * (r->y - p->y) +
-			point_norm(r) * (p->y - q->y)) / d;
-	c->c.y = (point_norm(p) * (r->x - q->x) +
-			point_norm(q) * (p->x - r->x) +
-			point_norm(r) * (q->x - p->x)) / d;
-	c->r = point_distance(p, &c->c);
 }
 
 /*

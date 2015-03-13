@@ -10,4 +10,7 @@ struct circle {
 	double r;
 };
 
+void points_centroid(const struct point *pts, int n, struct point *c);
+void points_bbox_center(const struct point *pts, int n, struct point *c);
+
 #endif
