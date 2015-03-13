@@ -256,6 +256,7 @@ err_free_gc:
  */
 static void cleanup_draw(struct kbd_state *state)
 {
+	XftFontClose(state->dpy, state->font);
 	XftColorFree(state->dpy, state->xvi.visual, state->cmap, &state->textclr);
 	XftDrawDestroy(state->draw);
 	XFreeGC(state->dpy, state->gc);
