@@ -1,5 +1,5 @@
-#ifndef GESTURE_H_
-#define GESTURE_H_
+#ifndef CHARADE_H_
+#define CHARADE_H_
 
 #include <stdint.h>
 #include <X11/Xlib.h>

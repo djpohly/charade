@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <inttypes.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -10,7 +11,7 @@
 #include <X11/Xft/Xft.h>
 #include <assert.h>
 
-#include "gesture.h"
+#include "charade.h"
 
 
 /*
@@ -110,7 +111,7 @@ static void ungrab_touches(struct kbd_state *state)
 }
 
 /*
- * Creates the main window for the GKOS keyboard
+ * Creates the main window for Charade
  */
 static int create_window(struct kbd_state *state)
 {
@@ -120,7 +121,7 @@ static int create_window(struct kbd_state *state)
 		fprintf(stderr, "Failed to allocate class hint\n");
 		return 1;
 	}
-	class->res_name = class->res_class = "gestureview";
+	class->res_name = class->res_class = "charade";
 
 	// Create the main fullscreen window
 	Screen *scr = DefaultScreenOfDisplay(state->dpy);
@@ -189,12 +190,6 @@ static int setup_draw(struct kbd_state *state)
 		goto err_free_gc;
 	}
 
-	/*
-	xrc.alpha = 0xffff;
-	xrc.red = 0xeeee;
-	xrc.green = 0xeeee;
-	xrc.blue = 0xecec;
-	*/
 	xrc = TEXT_COLOR;
 	if (!XftColorAllocValue(state->dpy, state->xvi.visual, state->cmap,
 				&xrc, &state->textclr)) {
@@ -278,6 +273,65 @@ static void get_bbox_center(struct kbd_state *state, double *cx, double *cy)
 
 	*cx = (xmin + xmax) / 2;
 	*cy = (ymin + ymax) / 2;
+}
+
+static double norm(double px, double py)
+{
+	return px*px + py*py;
+}
+
+static double distance(double px, double py, double qx, double qy)
+{
+	double dx = px - qx;
+	double dy = py - qy;
+	return sqrt(norm(dx, dy));
+}
+
+static int contained(double px, double py, double cx, double cy, double r)
+{
+	return distance(px, py, cx, cy) <= r;
+}
+
+/*
+ * Makes a circle from a diameter
+ */
+static void make_diameter(double px, double py, double qx, double qy,
+		double *cx, double *cy, double *r)
+{
+	*cx = (px + qx) / 2;
+	*cy = (py + qy) / 2;
+	*r = distance(px, py, qx, qy) / 2;
+}
+
+/*
+ * Makes a circumcircle from three points
+ */
+static void make_circumcircle(double px, double py, double qx, double qy,
+		double rx, double ry,
+		double *cx, double *cy, double *r)
+{
+	double d = (px * (qy - ry) + qx * (ry - py) + rx * (py - qy)) * 2;
+	if (d == 0) {
+		*cx = *cy = *r = 0;
+		return;
+	}
+	*cx = (norm(px, py) * (qy - ry) + norm(qx, qy) * (ry - py) +
+			norm(rx, ry) * (py - qy)) / d;
+	*cy = (norm(px, py) * (rx - qx) + norm(qx, qy) * (px - rx) +
+			norm(rx, ry) * (qx - px)) / d;
+	*r = distance(px, py, *cx, *cy);
+}
+
+/*
+ * Two points case
+ */
+static void make_circle_2(struct kbd_state *state, double px, double py,
+		double qx, double qy)
+{
+	double tx, ty, tr;
+	make_diameter(px, py, qx, qy, &tx, &ty, &tr);
+	// XXX left off here
+	(void) state;
 }
 
 /*
