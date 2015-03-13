@@ -239,8 +239,8 @@ static void get_centroid(struct kbd_state *state, double *cx, double *cy)
 	for (i = 0; i < state->ntouches; i++) {
 		if (state->touches[i].id < 0)
 			continue;
-		tx += state->touches[i].x;
-		ty += state->touches[i].y;
+		tx += state->touches[i].p.x;
+		ty += state->touches[i].p.y;
 		n++;
 	}
 	*cx = tx / n;
@@ -261,14 +261,14 @@ static void get_bbox_center(struct kbd_state *state, double *cx, double *cy)
 		if (state->touches[i].id < 0)
 			continue;
 
-		if (state->touches[i].x < xmin)
-			xmin = state->touches[i].x;
-		if (state->touches[i].x > xmax)
-			xmax = state->touches[i].x;
-		if (state->touches[i].y < ymin)
-			ymin = state->touches[i].y;
-		if (state->touches[i].y > ymax)
-			ymax = state->touches[i].y;
+		if (state->touches[i].p.x < xmin)
+			xmin = state->touches[i].p.x;
+		if (state->touches[i].p.x > xmax)
+			xmax = state->touches[i].p.x;
+		if (state->touches[i].p.y < ymin)
+			ymin = state->touches[i].p.y;
+		if (state->touches[i].p.y > ymax)
+			ymax = state->touches[i].p.y;
 	}
 
 	*cx = (xmin + xmax) / 2;
@@ -356,15 +356,15 @@ static void update_display(struct kbd_state *state)
 			continue;
 		touches++;
 		XFillArc(state->dpy, state->win, state->gc,
-				state->touches[i].x - TOUCH_RADIUS,
-				state->touches[i].y - TOUCH_RADIUS,
+				state->touches[i].p.x - TOUCH_RADIUS,
+				state->touches[i].p.y - TOUCH_RADIUS,
 				2 * TOUCH_RADIUS, 2 * TOUCH_RADIUS,
 				0, 360 * 64);
 	}
 
 	// Print calculated data
 	i = snprintf(str, 256, "Touches: %d", touches);
-	XftDrawString8(state->draw, &state->textclr, state->font, 0, sheight - 10,
+	XftDrawStringUtf8(state->draw, &state->textclr, state->font, 0, sheight - 10,
 			(XftChar8 *) str, i);
 
 	if (!touches)
@@ -378,7 +378,7 @@ static void update_display(struct kbd_state *state)
 			2 * CENTER_RADIUS, 2 * CENTER_RADIUS);
 
 	i = snprintf(str, 256, "C: (%.1f, %.1f)", cx / touches, cy / touches);
-	XftDrawString8(state->draw, &state->textclr, state->font, 0, sheight - 60,
+	XftDrawStringUtf8(state->draw, &state->textclr, state->font, 0, sheight - 60,
 			(XftChar8 *) str, i);
 }
 
@@ -406,8 +406,8 @@ static int add_touch(struct kbd_state *state, int id, double x, double y)
 
 	// Fill it out
 	state->touches[i].id = id;
-	state->touches[i].x = x;
-	state->touches[i].y = y;
+	state->touches[i].p.x = x;
+	state->touches[i].p.y = y;
 	return 0;
 }
 
@@ -456,8 +456,8 @@ static int handle_xi_event(struct kbd_state *state, XIDeviceEvent *ev)
 			assert(idx >= 0);
 
 			// Update touch position
-			state->touches[idx].x = ev->event_x;
-			state->touches[idx].y = ev->event_y;
+			state->touches[idx].p.x = ev->event_x;
+			state->touches[idx].p.y = ev->event_y;
 			break;
 
 		default:

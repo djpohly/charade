@@ -6,6 +6,8 @@
 #include <X11/Xutil.h>
 #include <X11/Xft/Xft.h>
 
+#include "geometry.h"
+
 #define TOUCH_RADIUS 50
 #define CENTER_RADIUS 30
 
@@ -23,8 +25,8 @@
 #define TEXT_FONT "Consolas:pixelsize=50"
 
 struct touch {
+	struct point p;
 	int id;
-	double x, y;
 };
 
 /*
