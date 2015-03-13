@@ -516,6 +516,7 @@ int main(int argc, char **argv)
 	ret = event_loop(&state);
 
 	// Clean everything up
+	cleanup_draw(&state);
 out_destroy_window:
 	destroy_window(&state);
 out_free_cmap:
