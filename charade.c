@@ -65,9 +65,8 @@ done:
 		return 1;
 	}
 
-	// Mark as unused to start
-	for (i = 0; i < state->nslots; i++)
-		state->touchids[i] = -1;
+	// Touch list is empty to start
+	state->touches = 0;
 
 	return 0;
 }
@@ -268,20 +267,15 @@ static void cleanup_draw(struct kbd_state *state)
 static void get_centroid(struct kbd_state *state, double *cx, double *cy)
 {
 	int i;
-	int n;
 	double tx, ty;
 
-	n = 0;
 	tx = ty = 0;
-	for (i = 0; i < state->nslots; i++) {
-		if (state->touchids[i] < 0)
-			continue;
+	for (i = 0; i < state->touches; i++) {
 		tx += state->touchpts[i].x;
 		ty += state->touchpts[i].y;
-		n++;
 	}
-	*cx = tx / n;
-	*cy = ty / n;
+	*cx = tx / state->touches;
+	*cy = ty / state->touches;
 }
 
 /*
@@ -294,10 +288,7 @@ static void get_bbox_center(struct kbd_state *state, double *cx, double *cy)
 
 	xmin = ymin = 9999999;
 	xmax = ymax = 0;
-	for (i = 0; i < state->nslots; i++) {
-		if (state->touchids[i] < 0)
-			continue;
-
+	for (i = 0; i < state->touches; i++) {
 		if (state->touchpts[i].x < xmin)
 			xmin = state->touchpts[i].x;
 		if (state->touchpts[i].x > xmax)
@@ -378,7 +369,6 @@ static void update_display(struct kbd_state *state)
 {
 	int i;
 	double cx, cy;
-	int touches;
 	char str[256];
 	Screen *scr = DefaultScreenOfDisplay(state->dpy);
 	int sheight = HeightOfScreen(scr);
@@ -387,11 +377,7 @@ static void update_display(struct kbd_state *state)
 
 	// Draw touches
 	XSetForeground(state->dpy, state->gc, TOUCH_COLOR);
-	touches = 0;
-	for (i = 0; i < state->nslots; i++) {
-		if (state->touchids[i] < 0)
-			continue;
-		touches++;
+	for (i = 0; i < state->touches; i++) {
 		XFillArc(state->dpy, state->win, state->gc,
 				state->touchpts[i].x - TOUCH_RADIUS,
 				state->touchpts[i].y - TOUCH_RADIUS,
@@ -400,11 +386,11 @@ static void update_display(struct kbd_state *state)
 	}
 
 	// Print calculated data
-	i = snprintf(str, 256, "Touches: %d", touches);
+	i = snprintf(str, 256, "Touches: %d", state->touches);
 	XftDrawStringUtf8(state->draw, &state->textclr, state->font, 0, sheight - 10,
 			(XftChar8 *) str, i);
 
-	if (!touches)
+	if (!state->touches)
 		return;
 
 	get_centroid(state, &cx, &cy);
@@ -414,7 +400,7 @@ static void update_display(struct kbd_state *state)
 			cx - CENTER_RADIUS, cy - CENTER_RADIUS,
 			2 * CENTER_RADIUS, 2 * CENTER_RADIUS);
 
-	i = snprintf(str, 256, "C: (%.1f, %.1f)", cx / touches, cy / touches);
+	i = snprintf(str, 256, "C: (%.1f, %.1f)", cx, cy);
 	XftDrawStringUtf8(state->draw, &state->textclr, state->font, 0, sheight - 60,
 			(XftChar8 *) str, i);
 }
@@ -425,7 +411,7 @@ static void update_display(struct kbd_state *state)
 static int get_touch_index(struct kbd_state *state, int id)
 {
 	int i;
-	for (i = 0; i < state->nslots; i++)
+	for (i = 0; i < state->touches; i++)
 		if (state->touchids[i] == id)
 			return i;
 	return -1;
@@ -436,15 +422,14 @@ static int get_touch_index(struct kbd_state *state, int id)
  */
 static int add_touch(struct kbd_state *state, int id, double x, double y)
 {
-	// Find an empty slot
-	int i = get_touch_index(state, -1);
 	// Should always have allocated enough slots for device max
-	assert(i >= 0);
+	assert(state->touches < state->nslots);
 
 	// Fill it out
-	state->touchids[i] = id;
-	state->touchpts[i].x = x;
-	state->touchpts[i].y = y;
+	state->touchids[state->touches] = id;
+	state->touchpts[state->touches].x = x;
+	state->touchpts[state->touches].y = y;
+	state->touches++;
 	return 0;
 }
 
@@ -453,7 +438,26 @@ static int add_touch(struct kbd_state *state, int id, double x, double y)
  */
 static void remove_touch(struct kbd_state *state, int idx)
 {
-	state->touchids[idx] = -1;
+	assert(idx >= 0 && idx < state->touches);
+
+	state->touches--;
+	if (idx < state->touches) {
+		memmove(&state->touchpts[idx], &state->touchpts[idx + 1],
+				(state->touches - idx) * sizeof(state->touchpts[0]));
+		memmove(&state->touchids[idx], &state->touchids[idx + 1],
+				(state->touches - idx) * sizeof(state->touchids[0]));
+	}
+}
+
+/*
+ * Updates a touch record
+ */
+static void update_touch(struct kbd_state *state, int idx, double x, double y)
+{
+	assert(idx >= 0 && idx < state->touches);
+
+	state->touchpts[idx].x = x;
+	state->touchpts[idx].y = y;
 }
 
 /*
@@ -493,8 +497,7 @@ static int handle_xi_event(struct kbd_state *state, XIDeviceEvent *ev)
 			assert(idx >= 0);
 
 			// Update touch position
-			state->touchpts[idx].x = ev->event_x;
-			state->touchpts[idx].y = ev->event_y;
+			update_touch(state, idx, ev->event_x, ev->event_y);
 			break;
 
 		default:

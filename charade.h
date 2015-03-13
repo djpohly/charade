@@ -39,6 +39,7 @@ struct kbd_state {
 	struct point *touchpts;
 	int *touchids;
 	int nslots;
+	int touches;
 	int xi_opcode;
 	int input_dev;
 	int shutdown;
