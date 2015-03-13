@@ -134,8 +134,7 @@ static void circle_from_diameter(struct point p, struct point q,
 static void circle_circumscribe(struct point p, struct point q, struct point r,
 		struct circle *c)
 {
-	//double d = (p.x * (q.y - r.y) + q.x * (r.y - p.y) + r.x * (p.y - q.y)) * 2;
-	double d = (point_cross(p, q) + point_cross(q, r) + point_cross(r, p)) / 2;
+	double d = (point_cross(p, q) + point_cross(q, r) + point_cross(r, p)) * 2;
 	if (d == 0) {
 		c->c.x = c->c.y = c->r = 0;
 		return;
