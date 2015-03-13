@@ -231,37 +231,41 @@ void cleanup_draw(struct kbd_state *state)
 }
 
 /*
- * Draws the window
+ * Gets the centroid of the touch points
  */
-void update_display(struct kbd_state *state)
+void get_centroid(struct kbd_state *state, double *cx, double *cy)
 {
 	int i;
-	double cx, cy;
+	int n;
+	double tx, ty;
+
+	n = 0;
+	tx = ty = 0;
+	for (i = 0; i < state->ntouches; i++) {
+		if (state->touches[i].id < 0)
+			continue;
+		tx += state->touches[i].x;
+		ty += state->touches[i].y;
+		n++;
+	}
+	*cx = tx / n;
+	*cy = ty / n;
+}
+
+/*
+ * Gets the center of the bounding box of the touch points
+ */
+void get_bbox_center(struct kbd_state *state, double *cx, double *cy)
+{
+	int i;
 	double xmin, xmax, ymin, ymax;
-	int touches;
-	char str[256];
-	Screen *scr = DefaultScreenOfDisplay(state->dpy);
-	int sheight = HeightOfScreen(scr);
 
-	XClearWindow(state->dpy, state->win);
-
-	// Draw touches
-	XSetForeground(state->dpy, state->gc, TOUCH_COLOR);
-	touches = 0;
-	cx = cy = 0;
 	xmin = ymin = 9999999;
 	xmax = ymax = 0;
 	for (i = 0; i < state->ntouches; i++) {
 		if (state->touches[i].id < 0)
 			continue;
-		touches++;
-		XFillArc(state->dpy, state->win, state->gc,
-				state->touches[i].x - TOUCH_RADIUS,
-				state->touches[i].y - TOUCH_RADIUS,
-				2 * TOUCH_RADIUS, 2 * TOUCH_RADIUS,
-				0, 360 * 64);
-		cx += state->touches[i].x;
-		cy += state->touches[i].y;
+
 		if (state->touches[i].x < xmin)
 			xmin = state->touches[i].x;
 		if (state->touches[i].x > xmax)
@@ -272,6 +276,38 @@ void update_display(struct kbd_state *state)
 			ymax = state->touches[i].y;
 	}
 
+	*cx = (xmin + xmax) / 2;
+	*cy = (ymin + ymax) / 2;
+}
+
+/*
+ * Draws the window
+ */
+void update_display(struct kbd_state *state)
+{
+	int i;
+	double cx, cy;
+	int touches;
+	char str[256];
+	Screen *scr = DefaultScreenOfDisplay(state->dpy);
+	int sheight = HeightOfScreen(scr);
+
+	XClearWindow(state->dpy, state->win);
+
+	// Draw touches
+	XSetForeground(state->dpy, state->gc, TOUCH_COLOR);
+	touches = 0;
+	for (i = 0; i < state->ntouches; i++) {
+		if (state->touches[i].id < 0)
+			continue;
+		touches++;
+		XFillArc(state->dpy, state->win, state->gc,
+				state->touches[i].x - TOUCH_RADIUS,
+				state->touches[i].y - TOUCH_RADIUS,
+				2 * TOUCH_RADIUS, 2 * TOUCH_RADIUS,
+				0, 360 * 64);
+	}
+
 	// Print calculated data
 	i = snprintf(str, 256, "Touches: %d", touches);
 	XftDrawString8(state->draw, &state->textclr, state->font, 0, sheight - 10,
@@ -280,8 +316,7 @@ void update_display(struct kbd_state *state)
 	if (!touches)
 		return;
 
-	cx /= touches;
-	cy /= touches;
+	get_centroid(state, &cx, &cy);
 
 	XSetForeground(state->dpy, state->gc, ANALYSIS_COLOR);
 	XFillRectangle(state->dpy, state->win, state->gc,
