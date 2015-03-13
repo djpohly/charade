@@ -264,43 +264,45 @@ static void cleanup_draw(struct kbd_state *state)
 /*
  * Gets the centroid of the touch points
  */
-static void get_centroid(struct kbd_state *state, struct point *c)
+static void points_centroid(const struct point *pts, int n, struct point *c)
 {
 	int i;
 	double tx, ty;
 
 	tx = ty = 0;
-	for (i = 0; i < state->touches; i++) {
-		tx += state->touchpts[i].x;
-		ty += state->touchpts[i].y;
+	for (i = 0; i < n; i++) {
+		tx += pts[i].x;
+		ty += pts[i].y;
 	}
-	c->x = tx / state->touches;
-	c->y = ty / state->touches;
+	c->x = tx / n;
+	c->y = ty / n;
 }
 
 /*
  * Gets the center of the bounding box of the touch points
  */
-static void get_bbox_center(struct kbd_state *state, struct point *c)
+static void points_bbox_center(const struct point *pts, int n, struct point *c)
 {
 	int i;
-	double xmin, xmax, ymin, ymax;
+	struct point min, max;
 
-	xmin = ymin = 9999999;
-	xmax = ymax = 0;
-	for (i = 0; i < state->touches; i++) {
-		if (state->touchpts[i].x < xmin)
-			xmin = state->touchpts[i].x;
-		if (state->touchpts[i].x > xmax)
-			xmax = state->touchpts[i].x;
-		if (state->touchpts[i].y < ymin)
-			ymin = state->touchpts[i].y;
-		if (state->touchpts[i].y > ymax)
-			ymax = state->touchpts[i].y;
+	if (n < 1)
+		return;
+
+	min = max = pts[0];
+	for (i = 1; i < n; i++) {
+		if (pts[i].x < min.x)
+			min.x = pts[i].x;
+		if (pts[i].x > max.x)
+			max.x = pts[i].x;
+		if (pts[i].y < min.y)
+			min.y = pts[i].y;
+		if (pts[i].y > max.y)
+			max.y = pts[i].y;
 	}
 
-	c->x = (xmin + xmax) / 2;
-	c->y = (ymin + ymax) / 2;
+	c->x = (min.x + max.x) / 2;
+	c->y = (min.y + max.y) / 2;
 }
 
 static double point_norm(const struct point *p)
@@ -383,7 +385,7 @@ static void update_display(struct kbd_state *state)
 	if (!state->touches)
 		return;
 
-	get_centroid(state, &c);
+	points_centroid(state->touchpts, state->touches, &c);
 
 	XSetForeground(state->dpy, state->gc, ANALYSIS_COLOR);
 	XFillRectangle(state->dpy, state->win, state->gc,
