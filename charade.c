@@ -291,7 +291,7 @@ static void update_display(struct kbd_state *state)
 	if (!state->touches)
 		return;
 
-	c = points_centroid(state->touchpts, state->touches);
+	c = points_enclosing_center(state->touchpts, state->touches);
 
 	XSetForeground(state->dpy, state->gc, ANALYSIS_COLOR);
 	XFillRectangle(state->dpy, state->win, state->gc,
