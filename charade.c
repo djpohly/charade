@@ -55,7 +55,7 @@ done:
 
 	// Allocate space for keeping track of currently held touches and the
 	// corresponding XInput touch event IDs
-	state->touches = calloc(state->ntouches, sizeof(state->touches[0]));
+	state->touches = malloc(state->ntouches * sizeof(state->touches[0]));
 
 	if (!state->touches) {
 		fprintf(stderr, "Failed to allocate touches\n");
