@@ -1,10 +1,17 @@
 /*
  * Geometric calculations
  *
+ *
  * Smallest enclosing circle algorithm is adapted from the Java implementation
  * by Project Nayuki and used under the provisions of the GPL.
  *
  * http://www.nayuki.io/page/smallest-enclosing-circle
+ *
+ *
+ * Gift-wrapping algorithm is adapted from the Java implementation by Adam
+ * Lärkeryd and used under the provisions of the GPLv2.
+ *
+ * https://code.google.com/p/convex-hull/
  */
 
 #include <stdlib.h>
