@@ -14,30 +14,34 @@
 /*
  * Returns the centroid of the given points
  */
-void points_centroid(const struct point *pts, int n, struct point *c)
+struct point points_centroid(const struct point *pts, int n)
 {
 	int i;
 	double tx, ty;
+	struct point c;
 
 	tx = ty = 0;
 	for (i = 0; i < n; i++) {
 		tx += pts[i].x;
 		ty += pts[i].y;
 	}
-	c->x = tx / n;
-	c->y = ty / n;
+	c.x = tx / n;
+	c.y = ty / n;
+	return c;
 }
 
 /*
  * Returns the center of the bounding box of the given points
  */
-void points_bbox_center(const struct point *pts, int n, struct point *c)
+struct point points_bbox_center(const struct point *pts, int n)
 {
 	int i;
-	struct point min, max;
+	struct point min, max, c;
 
-	if (n < 1)
-		return;
+	if (n < 1) {
+		c.x = c.y = 0;
+		return c;
+	}
 
 	min = max = pts[0];
 	for (i = 1; i < n; i++) {
@@ -51,8 +55,9 @@ void points_bbox_center(const struct point *pts, int n, struct point *c)
 			max.y = pts[i].y;
 	}
 
-	c->x = (min.x + max.x) / 2;
-	c->y = (min.y + max.y) / 2;
+	c.x = (min.x + max.x) / 2;
+	c.y = (min.y + max.y) / 2;
+	return c;
 }
 
 /*
