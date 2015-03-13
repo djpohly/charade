@@ -442,10 +442,8 @@ static void remove_touch(struct kbd_state *state, int idx)
 
 	state->touches--;
 	if (idx < state->touches) {
-		memmove(&state->touchpts[idx], &state->touchpts[idx + 1],
-				(state->touches - idx) * sizeof(state->touchpts[0]));
-		memmove(&state->touchids[idx], &state->touchids[idx + 1],
-				(state->touches - idx) * sizeof(state->touchids[0]));
+		state->touchids[idx] = state->touchids[state->touches];
+		state->touchpts[idx] = state->touchpts[state->touches];
 	}
 }
 
