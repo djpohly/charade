@@ -18,7 +18,7 @@
  * but not most touchpads).  The id parameter gives either a specific device ID
  * to check or one of the special values XIAllDevices or XIAllMasterDevices.
  */
-int init_touch_device(struct kbd_state *state, int id)
+static int init_touch_device(struct kbd_state *state, int id)
 {
 	// Get list of input devices and parameters
 	XIDeviceInfo *di;
@@ -72,7 +72,7 @@ done:
 /*
  * Clean up resources allocated for touch device
  */
-void destroy_touch_device(struct kbd_state *state)
+static void destroy_touch_device(struct kbd_state *state)
 {
 	free(state->touches);
 }
@@ -80,7 +80,7 @@ void destroy_touch_device(struct kbd_state *state)
 /*
  * Establishes an active grab on the touch device
  */
-int grab_touches(struct kbd_state *state)
+static int grab_touches(struct kbd_state *state)
 {
 	// Set up event mask for touch events
 	unsigned char mask[XIMaskLen(XI_LASTEVENT)];
@@ -104,7 +104,7 @@ int grab_touches(struct kbd_state *state)
 /*
  * Releases grab for the touch device
  */
-void ungrab_touches(struct kbd_state *state)
+static void ungrab_touches(struct kbd_state *state)
 {
 	XIUngrabDevice(state->dpy, state->input_dev, CurrentTime);
 }
@@ -112,7 +112,7 @@ void ungrab_touches(struct kbd_state *state)
 /*
  * Creates the main window for the GKOS keyboard
  */
-int create_window(struct kbd_state *state)
+static int create_window(struct kbd_state *state)
 {
 	// Set up the class hint for the viewer window
 	XClassHint *class = XAllocClassHint();
@@ -154,7 +154,7 @@ int create_window(struct kbd_state *state)
 /*
  * Map the main window and wait for confirmation
  */
-void map_window(struct kbd_state *state)
+static void map_window(struct kbd_state *state)
 {
 	// Map everything and wait for the notify event
 	XMapWindow(state->dpy, state->win);
@@ -168,7 +168,7 @@ void map_window(struct kbd_state *state)
 /*
  * Tear down everything created in create_window
  */
-void destroy_window(struct kbd_state *state)
+static void destroy_window(struct kbd_state *state)
 {
 	ungrab_touches(state);
 	XDestroyWindow(state->dpy, state->win);
@@ -177,7 +177,7 @@ void destroy_window(struct kbd_state *state)
 /*
  * Initializes drawing context
  */
-int setup_draw(struct kbd_state *state)
+static int setup_draw(struct kbd_state *state)
 {
 	XRenderColor xrc;
 
@@ -223,7 +223,7 @@ err_free_gc:
 /*
  * Tears down drawing context
  */
-void cleanup_draw(struct kbd_state *state)
+static void cleanup_draw(struct kbd_state *state)
 {
 	XftColorFree(state->dpy, state->xvi.visual, state->cmap, &state->textclr);
 	XftDrawDestroy(state->draw);
@@ -233,7 +233,7 @@ void cleanup_draw(struct kbd_state *state)
 /*
  * Gets the centroid of the touch points
  */
-void get_centroid(struct kbd_state *state, double *cx, double *cy)
+static void get_centroid(struct kbd_state *state, double *cx, double *cy)
 {
 	int i;
 	int n;
@@ -255,7 +255,7 @@ void get_centroid(struct kbd_state *state, double *cx, double *cy)
 /*
  * Gets the center of the bounding box of the touch points
  */
-void get_bbox_center(struct kbd_state *state, double *cx, double *cy)
+static void get_bbox_center(struct kbd_state *state, double *cx, double *cy)
 {
 	int i;
 	double xmin, xmax, ymin, ymax;
@@ -283,7 +283,7 @@ void get_bbox_center(struct kbd_state *state, double *cx, double *cy)
 /*
  * Draws the window
  */
-void update_display(struct kbd_state *state)
+static void update_display(struct kbd_state *state)
 {
 	int i;
 	double cx, cy;
@@ -331,7 +331,7 @@ void update_display(struct kbd_state *state)
 /*
  * Find the index of a given touch ID in the internal array
  */
-int get_touch_index(struct kbd_state *state, int id)
+static int get_touch_index(struct kbd_state *state, int id)
 {
 	int i;
 	for (i = 0; i < state->ntouches; i++)
@@ -343,7 +343,7 @@ int get_touch_index(struct kbd_state *state, int id)
 /*
  * Records a touch and its info
  */
-int add_touch(struct kbd_state *state, int id, double x, double y)
+static int add_touch(struct kbd_state *state, int id, double x, double y)
 {
 	// Find an empty slot
 	int i = get_touch_index(state, -1);
@@ -360,7 +360,7 @@ int add_touch(struct kbd_state *state, int id, double x, double y)
 /*
  * Removes a touch record
  */
-void remove_touch(struct kbd_state *state, int idx)
+static void remove_touch(struct kbd_state *state, int idx)
 {
 	state->touches[idx].id = -1;
 }
@@ -368,7 +368,7 @@ void remove_touch(struct kbd_state *state, int idx)
 /*
  * Event handling for XInput generic events
  */
-int handle_xi_event(struct kbd_state *state, XIDeviceEvent *ev)
+static int handle_xi_event(struct kbd_state *state, XIDeviceEvent *ev)
 {
 	int idx;
 
@@ -417,7 +417,7 @@ int handle_xi_event(struct kbd_state *state, XIDeviceEvent *ev)
 /*
  * Main event handling loop
  */
-int event_loop(struct kbd_state *state)
+static int event_loop(struct kbd_state *state)
 {
 	XEvent ev;
 	XGenericEventCookie *cookie = &ev.xcookie;

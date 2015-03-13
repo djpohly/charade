@@ -1,4 +1,5 @@
 CFLAGS = -std=c99 -Wall -Wextra -Wpedantic -Werror -g
+CFLAGS+= -Wno-unused-function
 
 BINS = gesture
 OBJS = gesture.o
