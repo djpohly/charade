@@ -24,11 +24,6 @@
 
 #define TEXT_FONT "Consolas:pixelsize=50"
 
-struct touch {
-	struct point p;
-	int id;
-};
-
 /*
  * Main application state structure
  */
@@ -41,11 +36,12 @@ struct kbd_state {
 	XftFont *font;
 	XftDraw *draw;
 	XftColor textclr;
+	struct point *touches;
+	int *touchids;
+	int ntouches;
 	int xi_opcode;
 	int input_dev;
-	int ntouches;
 	int shutdown;
-	struct touch *touches;
 };
 
 
