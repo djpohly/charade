@@ -114,6 +114,27 @@ static void ungrab_touches(struct kbd_state *state)
 }
 
 /*
+ * Establishes a passive grab for the Esc key
+ */
+static int grab_keys(struct kbd_state *state)
+{
+	KeyCode code = XKeysymToKeycode(state->dpy, XK_Escape);
+	if (!code)
+		return 1;
+	XGrabKey(state->dpy, code, 0, DefaultRootWindow(state->dpy),
+			True, GrabModeAsync, GrabModeAsync);
+	return 0;
+}
+
+/*
+ * Releases key grabs
+ */
+static void ungrab_keys(struct kbd_state *state)
+{
+	XUngrabKey(state->dpy, AnyKey, AnyModifier, state->win);
+}
+
+/*
  * Creates the main window for Charade
  */
 static int create_window(struct kbd_state *state)
@@ -146,13 +167,24 @@ static int create_window(struct kbd_state *state)
 	// Free the class hint
 	XFree(class);
 
-	// Grab touch events for the new window
+	// Grab events for the new window
+	if (grab_keys(state)) {
+		fprintf(stderr, "Failed to grab keys\n");
+		goto err_destroy_win;
+	}
 	if (grab_touches(state)) {
 		fprintf(stderr, "Failed to grab touch event\n");
-		return 1;
+		goto err_ungrab_keys;
 	}
 
 	return 0;
+
+
+err_ungrab_keys:
+	ungrab_keys(state);
+err_destroy_win:
+	XDestroyWindow(state->dpy, state->win);
+	return 1;
 }
 
 /*
@@ -175,6 +207,7 @@ static void map_window(struct kbd_state *state)
 static void destroy_window(struct kbd_state *state)
 {
 	ungrab_touches(state);
+	ungrab_keys(state);
 	XDestroyWindow(state->dpy, state->win);
 }
 
@@ -491,6 +524,16 @@ static int event_loop(struct kbd_state *state)
 			switch (ev.type) {
 				case MappingNotify:
 					XRefreshKeyboardMapping(&ev.xmapping);
+					if (ev.xmapping.request == MappingKeyboard) {
+						ungrab_keys(state);
+						grab_keys(state);
+					}
+					break;
+				case KeyPress:
+					break;
+				case KeyRelease:
+					// Only grabbed key is Esc
+					state->shutdown = 1;
 					break;
 				default:
 					fprintf(stderr, "regular event %d\n", ev.type);
