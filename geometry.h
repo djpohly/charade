@@ -14,4 +14,6 @@ struct point points_centroid(const struct point *pts, int n);
 struct point points_bbox_center(const struct point *pts, int n);
 struct point points_enclosing_center(const struct point *pts, int n);
 
+int points_convex_hull(const struct point *pts, int n, struct point *hull);
+
 #endif

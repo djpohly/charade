@@ -291,13 +291,28 @@ static void update_display(struct kbd_state *state)
 	if (!state->touches)
 		return;
 
+	XSetForeground(state->dpy, state->gc, ANALYSIS_COLOR);
+
+	// Draw convex hull
+	struct point *hull = malloc(state->touches * sizeof(hull[0]));
+	int nhull = points_convex_hull(state->touchpts, state->touches, hull);
+	for (i = 0; i < nhull - 1; i++) {
+		XDrawLine(state->dpy, state->win, state->gc, hull[i].x, hull[i].y,
+				hull[(i + 1) % nhull].x,
+				hull[(i + 1) % nhull].y);
+	}
+	XDrawLine(state->dpy, state->win, state->gc, hull[i].x, hull[i].y,
+			hull[0].x, hull[0].y);
+	free(hull);
+
+	// Draw center
 	c = points_enclosing_center(state->touchpts, state->touches);
 
-	XSetForeground(state->dpy, state->gc, ANALYSIS_COLOR);
 	XFillRectangle(state->dpy, state->win, state->gc,
 			c.x - CENTER_RADIUS, c.y - CENTER_RADIUS,
 			2 * CENTER_RADIUS, 2 * CENTER_RADIUS);
 
+	// Print analysis text
 	i = snprintf(str, 256, "C: (%.1f, %.1f)", c.x, c.y);
 	XftDrawStringUtf8(state->draw, &state->textclr, state->font, 0, sheight - 60,
 			(XftChar8 *) str, i);

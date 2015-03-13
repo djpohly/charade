@@ -7,6 +7,8 @@
  * http://www.nayuki.io/page/smallest-enclosing-circle
  */
 
+#include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <assert.h>
 
@@ -224,4 +226,88 @@ struct point points_enclosing_center(const struct point *pts, int n)
 	}
 
 	return c.c;
+}
+
+static int points_compare_x(const void *v1, const void *v2)
+{
+	const struct point *p1 = v1, *p2 = v2;
+	if (p1->x < p2->x)
+		return -1;
+	if (p1->x > p2->x)
+		return 1;
+	return 0;
+}
+
+static int right_turn(struct point p, struct point q, struct point r)
+{
+	return point_cross(p, q) + point_cross(q, r) + point_cross(r, p) > 0;
+	/*
+	return (q.x * r.y - r.x * q.y) + (p.x * q.y - q.x * p.y)
+		+ (r.x * p.y - p.x * r.y) > 0;
+	return (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x) > 0;
+	*/
+}
+
+/*
+ * Calculates the convex hull of the given points, storing the points of the
+ * hull in the hull array and returning the length of that array
+ */
+int points_convex_hull(const struct point *pts, int n, struct point *hull)
+{
+	if (n < 0)
+		return -1;
+	if (n == 0)
+		return 0;
+	if (n == 1) {
+		hull[0] = pts[0];
+		return 1;
+	}
+
+	struct point *xsorted = malloc(n * sizeof(xsorted[0]));
+	assert(xsorted); //sloppy
+	memcpy(xsorted, pts, n * sizeof(xsorted[0]));
+	qsort(xsorted, n, sizeof(xsorted[0]), points_compare_x);
+
+	struct point *lupper = malloc(n * sizeof(lupper[0]));
+	assert(lupper);
+	lupper[0] = xsorted[0];
+	lupper[1] = xsorted[1];
+
+	int ui = 2;
+	int i;
+	for (i = 2; i < n; i++) {
+		lupper[ui++] = xsorted[i];
+		while (ui > 2 && !right_turn(lupper[ui - 3], lupper[ui - 2], lupper[ui - 1])) {
+			// Remove the middle point of the three last
+			lupper[ui - 2] = lupper[ui - 1];
+			ui--;
+		}
+	}
+
+	struct point *llower = malloc(n * sizeof(llower[0]));
+	assert(llower);
+	llower[0] = xsorted[n - 1];
+	llower[1] = xsorted[n - 2];
+
+	int li = 2;
+
+	for (i = n - 3; i >= 0; i--) {
+		llower[li++] = xsorted[i];
+		while(li > 2 && !right_turn(llower[li - 3], llower[li - 2], llower[li - 1])) {
+			// Remove the middle point of the three last
+			llower[li - 2] = llower[li - 1];
+			li--;
+		}
+	}
+
+	for (i = 0; i < ui; i++)
+		hull[i] = lupper[i];
+	for (i = 0; i < li - 2; i++)
+		hull[ui + i] = llower[i + 1];
+
+	free(llower);
+	free(lupper);
+	free(xsorted);
+
+	return ui + li - 2;
 }
