@@ -73,34 +73,41 @@ struct point points_bbox_center(const struct point *pts, int n)
 /*
  * Returns a vector perpendicular to the given vector
  */
-static struct point point_perp(struct point p)
+static struct point vector_perp(struct point p)
 {
 	return (struct point) {-p.y, p.x};
 }
 
 /*
- * Returns the dot product of two points
+ * Returns the dot product of two vectors
  */
-static double point_dot(struct point p, struct point q)
+static double vector_dot(struct point p, struct point q)
 {
 	return p.x * q.x + p.y * q.y;
 }
 
 /*
- * According to the original code, "signed area/determinant thing"; let's just
- * stick with that
+ * Handy two-dimensional "cross" product (or dot-perp)
  */
-static double point_cross(struct point p, struct point q)
+static double vector_cross(struct point p, struct point q)
 {
-	return point_dot(p, point_perp(q));
+	return vector_dot(p, vector_perp(q));
 }
 
 /*
- * Subtracts two points
+ * Returns the difference between two vectors
  */
-static struct point point_sub(struct point p, struct point q)
+static struct point vector_sub(struct point p, struct point q)
 {
 	return (struct point) {p.x - q.x, p.y - q.y};
+}
+
+/*
+ * Returns the magnitude of a vector
+ */
+static double vector_norm(struct point v)
+{
+	return sqrt(vector_dot(v, v));
 }
 
 /*
@@ -108,16 +115,15 @@ static struct point point_sub(struct point p, struct point q)
  */
 static double point_distance(struct point p, struct point q)
 {
-	struct point d = point_sub(q, p);
-	return sqrt(point_dot(d, d));
+	return vector_norm(vector_sub(q, p));
 }
 
 /*
- * Returns the unit vector for a point
+ * Returns the unit vector for a vector
  */
-static struct point point_unit(struct point p)
+static struct point vector_unit(struct point p)
 {
-	double d = sqrt(point_dot(p, p));
+	double d = vector_norm(p);
 	return (struct point) {p.x / d, p.y / d};
 }
 
@@ -159,17 +165,17 @@ static void circle_from_diameter(struct point p, struct point q,
 static void circle_circumscribe(struct point p, struct point q, struct point r,
 		struct circle *c)
 {
-	double d = (point_cross(p, q) + point_cross(q, r) + point_cross(r, p)) * 2;
+	double d = (vector_cross(p, q) + vector_cross(q, r) + vector_cross(r, p)) * 2;
 	if (d == 0) {
 		c->c.x = c->c.y = c->r = 0;
 		return;
 	}
-	c->c.x = (point_dot(p, p) * (q.y - r.y) +
-			point_dot(q, q) * (r.y - p.y) +
-			point_dot(r, r) * (p.y - q.y)) / d;
-	c->c.y = (point_dot(p, p) * (r.x - q.x) +
-			point_dot(q, q) * (p.x - r.x) +
-			point_dot(r, r) * (q.x - p.x)) / d;
+	c->c.x = (vector_dot(p, p) * (q.y - r.y) +
+			vector_dot(q, q) * (r.y - p.y) +
+			vector_dot(r, r) * (p.y - q.y)) / d;
+	c->c.y = (vector_dot(p, p) * (r.x - q.x) +
+			vector_dot(q, q) * (p.x - r.x) +
+			vector_dot(r, r) * (q.x - p.x)) / d;
 	c->r = point_distance(p, c->c);
 }
 
@@ -186,23 +192,23 @@ static void circle_2points(const struct point *pts, int n,
 		return;
 	}
 
-	struct point pq = point_sub(q, p);;
+	struct point pq = vector_sub(q, p);;
 
 	temp.r = temp2.r = 0;
 	for (i = 0; i < n; i++) {
-		struct point pr = point_sub(pts[i], p);;
+		struct point pr = vector_sub(pts[i], p);;
 
-		double cross = point_cross(pq, pr);
+		double cross = vector_cross(pq, pr);
 		struct circle cc;
 		circle_circumscribe(p, q, pts[i], &cc);
 		if (cc.r == 0)
 			continue;
 
-		struct point pc = point_sub(cc.c, p);
+		struct point pc = vector_sub(cc.c, p);
 
-		if (cross > 0 && (temp.r == 0 || point_cross(pq, pc) > point_cross(pq, point_sub(temp.c, p))))
+		if (cross > 0 && (temp.r == 0 || vector_cross(pq, pc) > vector_cross(pq, vector_sub(temp.c, p))))
 			temp = cc;
-		else if (cross < 0 && (temp2.r == 0 || point_cross(pq, pc) < point_cross(pq, point_sub(temp2.c, p))))
+		else if (cross < 0 && (temp2.r == 0 || vector_cross(pq, pc) < vector_cross(pq, vector_sub(temp2.c, p))))
 			temp2 = cc;
 	}
 	if (temp2.r == 0)
@@ -262,7 +268,7 @@ static int points_compare_x(const void *v1, const void *v2)
 
 static int right_turn(struct point p, struct point q, struct point r)
 {
-	return point_cross(p, q) + point_cross(q, r) + point_cross(r, p) > 0;
+	return vector_cross(p, q) + vector_cross(q, r) + vector_cross(r, p) > 0;
 }
 
 /*
