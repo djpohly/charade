@@ -71,11 +71,19 @@ struct point points_bbox_center(const struct point *pts, int n)
 }
 
 /*
- * Returns the norm of a point as a vector
+ * Returns a vector perpendicular to the given vector
  */
-static double point_norm(struct point p)
+static struct point point_perp(struct point p)
 {
-	return p.x * p.x + p.y * p.y;
+	return (struct point) {-p.y, p.x};
+}
+
+/*
+ * Returns the dot product of two points
+ */
+static double point_dot(struct point p, struct point q)
+{
+	return p.x * q.x + p.y * q.y;
 }
 
 /*
@@ -84,7 +92,7 @@ static double point_norm(struct point p)
  */
 static double point_cross(struct point p, struct point q)
 {
-	return p.x * q.y - q.x * p.y;
+	return point_dot(p, point_perp(q));
 }
 
 /*
@@ -92,10 +100,7 @@ static double point_cross(struct point p, struct point q)
  */
 static struct point point_sub(struct point p, struct point q)
 {
-	struct point d;
-	d.x = p.x - q.x;
-	d.y = p.y - q.y;
-	return d;
+	return (struct point) {p.x - q.x, p.y - q.y};
 }
 
 /*
@@ -103,7 +108,17 @@ static struct point point_sub(struct point p, struct point q)
  */
 static double point_distance(struct point p, struct point q)
 {
-	return sqrt(point_norm(point_sub(q, p)));
+	struct point d = point_sub(q, p);
+	return sqrt(point_dot(d, d));
+}
+
+/*
+ * Returns the unit vector for a point
+ */
+static struct point point_unit(struct point p)
+{
+	double d = sqrt(point_dot(p, p));
+	return (struct point) {p.x / d, p.y / d};
 }
 
 /*
@@ -149,12 +164,12 @@ static void circle_circumscribe(struct point p, struct point q, struct point r,
 		c->c.x = c->c.y = c->r = 0;
 		return;
 	}
-	c->c.x = (point_norm(p) * (q.y - r.y) +
-			point_norm(q) * (r.y - p.y) +
-			point_norm(r) * (p.y - q.y)) / d;
-	c->c.y = (point_norm(p) * (r.x - q.x) +
-			point_norm(q) * (p.x - r.x) +
-			point_norm(r) * (q.x - p.x)) / d;
+	c->c.x = (point_dot(p, p) * (q.y - r.y) +
+			point_dot(q, q) * (r.y - p.y) +
+			point_dot(r, r) * (p.y - q.y)) / d;
+	c->c.y = (point_dot(p, p) * (r.x - q.x) +
+			point_dot(q, q) * (p.x - r.x) +
+			point_dot(r, r) * (q.x - p.x)) / d;
 	c->r = point_distance(p, c->c);
 }
 
