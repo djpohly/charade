@@ -111,20 +111,20 @@ static double vector_norm(struct point v)
 }
 
 /*
- * Returns the distance between two points
- */
-static double point_distance(struct point p, struct point q)
-{
-	return vector_norm(vector_sub(q, p));
-}
-
-/*
  * Returns the unit vector for a vector
  */
 static struct point vector_unit(struct point p)
 {
 	double d = vector_norm(p);
 	return (struct point) {p.x / d, p.y / d};
+}
+
+/*
+ * Returns the distance between two points
+ */
+static double point_distance(struct point p, struct point q)
+{
+	return vector_norm(vector_sub(q, p));
 }
 
 /*
