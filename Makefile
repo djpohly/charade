@@ -1,4 +1,4 @@
-CFLAGS = -g -std=c99 -Wall -Wextra -Wpedantic -Werror -Wno-unused-function
+CFLAGS = -g -std=c99 -Wall -Wextra -Wpedantic -Werror -Wno-unused-function -O2
 
 BINS = charade
 OBJS = charade.o geometry.o
