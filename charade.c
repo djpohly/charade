@@ -293,20 +293,29 @@ static void update_display(struct kbd_state *state)
 
 	XSetForeground(state->dpy, state->gc, ANALYSIS_COLOR);
 
-	// Draw convex hull
+	// Draw convex hull and bounding box
 	struct point *hull = malloc(state->touches * sizeof(hull[0]));
 	int nhull = points_convex_hull(state->touchpts, state->touches, hull);
 	for (i = 0; i < nhull - 1; i++) {
 		XDrawLine(state->dpy, state->win, state->gc, hull[i].x, hull[i].y,
-				hull[(i + 1) % nhull].x,
-				hull[(i + 1) % nhull].y);
+				hull[i + 1].x, hull[i + 1].y);
 	}
 	XDrawLine(state->dpy, state->win, state->gc, hull[i].x, hull[i].y,
 			hull[0].x, hull[0].y);
+
+	struct point bbox[4];
+	points_oriented_bbox(hull, nhull, bbox);
+	for (i = 0; i < 3; i++) {
+		XDrawLine(state->dpy, state->win, state->gc, bbox[i].x, bbox[i].y,
+				bbox[i + 1].x,
+				bbox[i + 1].y);
+	}
+	XDrawLine(state->dpy, state->win, state->gc, bbox[3].x, bbox[3].y,
+			bbox[0].x, bbox[0].y);
 	free(hull);
 
 	// Draw center
-	c = points_enclosing_center(state->touchpts, state->touches);
+	c = points_bbox_center(state->touchpts, state->touches);
 
 	XFillRectangle(state->dpy, state->win, state->gc,
 			c.x - CENTER_RADIUS, c.y - CENTER_RADIUS,

@@ -333,3 +333,33 @@ int points_convex_hull(const struct point *pts, int n, struct point *hull)
 
 	return ui + li - 2;
 }
+
+/*
+ * Calculates the minimum oriented bounding box of the given convex hull,
+ * storing the points of the box in the rect array (which should be of length at
+ * least 4)
+ */
+void points_oriented_bbox(const struct point *hull, int n, struct point *rect)
+{
+	int t, b, l, r;
+	int i;
+
+	t = b = l = r = 0;
+	for (i = 0; i < n; i++) {
+		int last = (i + n - 1) % n;
+		int next = (i + 1) % n;
+		if (hull[i].x <= hull[last].x && hull[i].x <= hull[next].x)
+			l = i;
+		if (hull[i].x >= hull[last].x && hull[i].x >= hull[next].x)
+			r = i;
+		if (hull[i].y <= hull[last].y && hull[i].y <= hull[next].y)
+			b = i;
+		if (hull[i].y >= hull[last].y && hull[i].y >= hull[next].y)
+			t = i;
+	}
+
+	rect[0] = (struct point) {hull[l].x, hull[t].y};
+	rect[1] = (struct point) {hull[r].x, hull[t].y};
+	rect[2] = (struct point) {hull[r].x, hull[b].y};
+	rect[3] = (struct point) {hull[l].x, hull[b].y};
+}
