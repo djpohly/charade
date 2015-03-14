@@ -263,11 +263,6 @@ static int points_compare_x(const void *v1, const void *v2)
 static int right_turn(struct point p, struct point q, struct point r)
 {
 	return point_cross(p, q) + point_cross(q, r) + point_cross(r, p) > 0;
-	/*
-	return (q.x * r.y - r.x * q.y) + (p.x * q.y - q.x * p.y)
-		+ (r.x * p.y - p.x * r.y) > 0;
-	return (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x) > 0;
-	*/
 }
 
 /*
