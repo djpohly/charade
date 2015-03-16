@@ -145,6 +145,22 @@ static struct point vector_unit(struct point v)
 }
 
 /*
+ * Returns the intersection point of the line passing through u0 in the
+ * direction of u and the line passing through v0 in the direction of v
+ *
+ * Formula credited to Ronald Goldman here:
+ *
+ * http://stackoverflow.com/questions/563198
+ */
+static struct point vector_intersect(struct point p, struct point r,
+		struct point q, struct point s)
+{
+	double t = vector_cross(vector_sub(q, p),
+			vector_div(s, vector_cross(r, s)));
+	return vector_add(p, vector_mul(r, t));
+}
+
+/*
  * Returns the distance between two points
  */
 static double point_distance(struct point p, struct point q)
@@ -367,10 +383,15 @@ int points_convex_hull(const struct point *pts, int n, struct point *hull)
  */
 void points_oriented_bbox(const struct point *hull, int n, struct point *rect)
 {
-	int t, b, l, r;
 	int i;
-
+	int t, b, l, r;
 	t = b = l = r = 0;
+
+	// Basis vectors: standard basis to start
+	struct point basis[2];
+	basis[0] = POINT(1, 0);
+	basis[1] = vector_perp(basis[0]);
+
 	for (i = 0; i < n; i++) {
 		int last = (i + n - 1) % n;
 		int next = (i + 1) % n;
@@ -384,8 +405,8 @@ void points_oriented_bbox(const struct point *hull, int n, struct point *rect)
 			t = i;
 	}
 
-	rect[0] = POINT(hull[l].x, hull[t].y);
-	rect[1] = POINT(hull[r].x, hull[t].y);
-	rect[2] = POINT(hull[r].x, hull[b].y);
-	rect[3] = POINT(hull[l].x, hull[b].y);
+	rect[0] = vector_intersect(hull[t], bi, hull[l], bj);
+	rect[1] = vector_intersect(hull[t], bi, hull[r], bj);
+	rect[2] = vector_intersect(hull[b], bi, hull[r], bj);
+	rect[3] = vector_intersect(hull[b], bi, hull[l], bj);
 }
