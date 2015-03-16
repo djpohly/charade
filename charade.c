@@ -288,7 +288,7 @@ static void update_display(struct kbd_state *state)
 	XftDrawStringUtf8(state->draw, &state->textclr, state->font, 0, sheight - 10,
 			(XftChar8 *) str, i);
 
-	if (!state->touches)
+	if (state->touches < 3)
 		return;
 
 	XSetForeground(state->dpy, state->gc, ANALYSIS_COLOR);

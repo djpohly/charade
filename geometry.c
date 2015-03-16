@@ -394,6 +394,9 @@ int points_convex_hull(const struct point *pts, int n, struct point *hull)
 void points_oriented_bbox(const struct point *hull, int n, struct point *rect)
 {
 	int i;
+	double min_area = -1;
+	struct point temp[4];
+	double area;
 
 	// Yay VLA, livin' dangerously
 	struct point hullcal[n];
@@ -422,31 +425,45 @@ void points_oriented_bbox(const struct point *hull, int n, struct point *rect)
 		hullcal[i] = vector_unit(vector_sub(hull[next], hull[i]));
 	}
 
-	// Find caliper with minimum angle to next point - since the angles are
-	// all between 0 and pi, this is the one with the maximum cosine
-	int cal = 0;
-	double max_cos = -2;
-	for (i = 0; i < 4; i++) {
-		double cos_theta = vector_dot(caliper[i], hullcal[point[i]]);
-		if (cos_theta > max_cos) {
-			max_cos = cos_theta;
-			cal = i;
+	// With a rectangular set of calipers, we have to rotate through pi/2
+	// radians at most, which is done when the X component of the caliper
+	// that started as (1, 0) hits zero.
+	while (caliper[0].x > 0) {
+		// Find caliper with minimum angle to next point - since the
+		// angles are all between 0 and pi, this is the one with the
+		// maximum cosine
+		int cal = 0;
+		double max_cos = -2;
+		for (i = 0; i < 4; i++) {
+			double cos_theta = vector_dot(caliper[i], hullcal[point[i]]);
+			if (cos_theta > max_cos) {
+				max_cos = cos_theta;
+				cal = i;
+			}
 		}
-	}
 
-	// Move current caliper to next point
-	caliper[cal] = hullcal[point[cal]];
-	point[cal]++;
-	point[cal] %= n;
+		// Move current caliper to next point
+		caliper[cal] = hullcal[point[cal]];
+		point[cal]++;
+		point[cal] %= n;
 
-	// "Rotate" (actually just recalculate) remaining calipers
-	for (i = 1; i < 4; i++)
-		caliper[(cal + i) % 4] = vector_perp(caliper[(cal + i - 1) % 4]);
+		// "Rotate" (actually just recalculate) remaining calipers
+		for (i = 1; i < 4; i++)
+			caliper[(cal + i) % 4] = vector_perp(caliper[(cal + i - 1) % 4]);
 
-	// Calculate rectangle corners (intersections of calipers)
-	for (i = 0; i < 4; i++) {
-		int next = (i + 1) % 4;
-		rect[i] = vector_intersect(hull[point[i]], caliper[i],
-				hull[point[next]], caliper[next]);
+		// Calculate rectangle corners (intersections of calipers)
+		for (i = 0; i < 4; i++) {
+			int next = (i + 1) % 4;
+			temp[i] = vector_intersect(hull[point[i]], caliper[i],
+					hull[point[next]], caliper[next]);
+		}
+
+		// If it's the best so far, save it
+		area = points_par_area(temp[0], temp[1], temp[2]);
+		if (area < min_area || min_area < 0) {
+			min_area = area;
+			for (i = 0; i < 4; i++)
+				rect[i] = temp[i];
+		}
 	}
 }
