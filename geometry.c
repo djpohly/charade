@@ -309,7 +309,7 @@ static int points_compare_x(const void *v1, const void *v2)
 
 static int left_turn(struct point p, struct point q, struct point r)
 {
-	return vector_cross(p, q) + vector_cross(q, r) + vector_cross(r, p) < 0;
+	return vector_cross(p, q) + vector_cross(q, r) + vector_cross(r, p) > 0;
 }
 
 /*
