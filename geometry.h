@@ -5,6 +5,8 @@ struct point {
 	double x, y;
 };
 
+#define POINT(x, y) ((struct point) {x, y})
+
 struct circle {
 	struct point c;
 	double r;

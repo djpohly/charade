@@ -75,7 +75,7 @@ struct point points_bbox_center(const struct point *pts, int n)
  */
 static struct point vector_perp(struct point p)
 {
-	return (struct point) {-p.y, p.x};
+	return POINT(-p.y, p.x);
 }
 
 /*
@@ -99,7 +99,7 @@ static double vector_cross(struct point p, struct point q)
  */
 static struct point vector_add(struct point u, struct point v)
 {
-	return (struct point) {u.x + v.x, u.y + v.y};
+	return POINT(u.x + v.x, u.y + v.y);
 }
 
 /*
@@ -107,7 +107,7 @@ static struct point vector_add(struct point u, struct point v)
  */
 static struct point vector_sub(struct point p, struct point q)
 {
-	return (struct point) {p.x - q.x, p.y - q.y};
+	return POINT(p.x - q.x, p.y - q.y);
 }
 
 /*
@@ -115,7 +115,7 @@ static struct point vector_sub(struct point p, struct point q)
  */
 static struct point vector_mul(struct point v, double s)
 {
-	return (struct point) {v.x * s, v.y * s};
+	return POINT(v.x * s, v.y * s);
 }
 
 /*
@@ -123,7 +123,7 @@ static struct point vector_mul(struct point v, double s)
  */
 static struct point vector_div(struct point v, double s)
 {
-	return (struct point) {v.x / s, v.y / s};
+	return POINT(v.x / s, v.y / s);
 }
 
 /*
@@ -140,7 +140,7 @@ static double vector_norm(struct point v)
 static struct point vector_unit(struct point v)
 {
 	if (v.x == 0 && v.y == 0)
-		return (struct point) {1, 0};
+		return POINT(1, 0);
 	return vector_div(v, vector_norm(v));
 }
 
@@ -384,8 +384,8 @@ void points_oriented_bbox(const struct point *hull, int n, struct point *rect)
 			t = i;
 	}
 
-	rect[0] = (struct point) {hull[l].x, hull[t].y};
-	rect[1] = (struct point) {hull[r].x, hull[t].y};
-	rect[2] = (struct point) {hull[r].x, hull[b].y};
-	rect[3] = (struct point) {hull[l].x, hull[b].y};
+	rect[0] = POINT(hull[l].x, hull[t].y);
+	rect[1] = POINT(hull[r].x, hull[t].y);
+	rect[2] = POINT(hull[r].x, hull[b].y);
+	rect[3] = POINT(hull[l].x, hull[b].y);
 }
