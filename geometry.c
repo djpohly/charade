@@ -378,12 +378,16 @@ int points_convex_hull(const struct point *pts, int n, struct point *hull)
 
 /*
  * Calculates the minimum oriented bounding box of the given convex hull,
- * storing the points of the box in the rect array (which should be of length at
- * least 4)
+ * storing the points of the box in the rect array (length 4)
+ *
+ * The hull points must be provided in counterclockwise order.
  */
 void points_oriented_bbox(const struct point *hull, int n, struct point *rect)
 {
 	int i;
+
+	// Yay VLA, livin' dangerously
+	struct point hullcal[n];
 
 	// Start calipers on standard basis
 	struct point caliper[4];
@@ -391,28 +395,49 @@ void points_oriented_bbox(const struct point *hull, int n, struct point *rect)
 	for (i = 1; i < 4; i++)
 		caliper[i] = vector_perp(caliper[i - 1]);
 
-	// Point indices on the hull which the calipers currently touch
+	// Find points on the hull which the initial calipers touch.  While
+	// we're at it, calculate caliper vectors for each edge of the hull.
 	int point[4];
 	point[0] = point[1] = point[2] = point[3] = 0;
-
-	// Find initial points
 	for (i = 0; i < n; i++) {
 		int last = (i + n - 1) % n;
 		int next = (i + 1) % n;
-		if (hull[i].y >= hull[last].y && hull[i].y >= hull[next].y)
+		if (hull[i].y <= hull[last].y && hull[i].y <= hull[next].y)
 			point[0] = i;
 		if (hull[i].x >= hull[last].x && hull[i].x >= hull[next].x)
 			point[1] = i;
-		if (hull[i].y <= hull[last].y && hull[i].y <= hull[next].y)
+		if (hull[i].y >= hull[last].y && hull[i].y >= hull[next].y)
 			point[2] = i;
 		if (hull[i].x <= hull[last].x && hull[i].x <= hull[next].x)
 			point[3] = i;
+		hullcal[i] = vector_unit(vector_sub(hull[next], hull[i]));
 	}
+
+	// Find caliper with minimum angle to next point - since the angles are
+	// all between 0 and pi, this is the one with the maximum cosine
+	int cal = 0;
+	double max_cos = -2;
+	for (i = 0; i < 4; i++) {
+		double cos_theta = vector_dot(caliper[i], hullcal[point[i]]);
+		if (cos_theta > max_cos) {
+			max_cos = cos_theta;
+			cal = i;
+		}
+	}
+
+	// Move current caliper to next point
+	caliper[cal] = hullcal[point[cal]];
+	point[cal]++;
+	point[cal] %= n;
+
+	// "Rotate" (actually just recalculate) remaining calipers
+	for (i = 1; i < 4; i++)
+		caliper[(cal + i) % 4] = vector_perp(caliper[(cal + i - 1) % 4]);
 
 	// Calculate rectangle corners (intersections of calipers)
 	for (i = 0; i < 4; i++) {
-		int j = (i + 1) % 4;
+		int next = (i + 1) % 4;
 		rect[i] = vector_intersect(hull[point[i]], caliper[i],
-				hull[point[j]], caliper[j]);
+				hull[point[next]], caliper[next]);
 	}
 }
