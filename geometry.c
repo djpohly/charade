@@ -137,10 +137,11 @@ static double vector_norm(struct point v)
 /*
  * Returns the unit vector for a vector
  */
-static struct point vector_unit(struct point p)
+static struct point vector_unit(struct point v)
 {
-	double d = vector_norm(p);
-	return (struct point) {p.x / d, p.y / d};
+	if (v.x == 0 && v.y == 0)
+		return (struct point) {1, 0};
+	return vector_div(v, vector_norm(v));
 }
 
 /*
