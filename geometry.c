@@ -291,9 +291,9 @@ static int points_compare_x(const void *v1, const void *v2)
 	return 0;
 }
 
-static int right_turn(struct point p, struct point q, struct point r)
+static int left_turn(struct point p, struct point q, struct point r)
 {
-	return vector_cross(p, q) + vector_cross(q, r) + vector_cross(r, p) > 0;
+	return vector_cross(p, q) + vector_cross(q, r) + vector_cross(r, p) < 0;
 }
 
 /*
@@ -316,45 +316,45 @@ int points_convex_hull(const struct point *pts, int n, struct point *hull)
 	memcpy(xsorted, pts, n * sizeof(xsorted[0]));
 	qsort(xsorted, n, sizeof(xsorted[0]), points_compare_x);
 
-	struct point *lupper = malloc(n * sizeof(lupper[0]));
-	assert(lupper);
-	lupper[0] = xsorted[0];
-	lupper[1] = xsorted[1];
+	struct point *llower = malloc(n * sizeof(llower[0]));
+	assert(llower);
+	llower[0] = xsorted[0];
+	llower[1] = xsorted[1];
 
 	int ui = 2;
 	int i;
 	for (i = 2; i < n; i++) {
-		lupper[ui++] = xsorted[i];
-		while (ui > 2 && !right_turn(lupper[ui - 3], lupper[ui - 2], lupper[ui - 1])) {
+		llower[ui++] = xsorted[i];
+		while (ui > 2 && !left_turn(llower[ui - 3], llower[ui - 2], llower[ui - 1])) {
 			// Remove the middle point of the three last
-			lupper[ui - 2] = lupper[ui - 1];
+			llower[ui - 2] = llower[ui - 1];
 			ui--;
 		}
 	}
 
-	struct point *llower = malloc(n * sizeof(llower[0]));
-	assert(llower);
-	llower[0] = xsorted[n - 1];
-	llower[1] = xsorted[n - 2];
+	struct point *lupper = malloc(n * sizeof(lupper[0]));
+	assert(lupper);
+	lupper[0] = xsorted[n - 1];
+	lupper[1] = xsorted[n - 2];
 
 	int li = 2;
 
 	for (i = n - 3; i >= 0; i--) {
-		llower[li++] = xsorted[i];
-		while(li > 2 && !right_turn(llower[li - 3], llower[li - 2], llower[li - 1])) {
+		lupper[li++] = xsorted[i];
+		while(li > 2 && !left_turn(lupper[li - 3], lupper[li - 2], lupper[li - 1])) {
 			// Remove the middle point of the three last
-			llower[li - 2] = llower[li - 1];
+			lupper[li - 2] = lupper[li - 1];
 			li--;
 		}
 	}
 
 	for (i = 0; i < ui; i++)
-		hull[i] = lupper[i];
+		hull[i] = llower[i];
 	for (i = 0; i < li - 2; i++)
-		hull[ui + i] = llower[i + 1];
+		hull[ui + i] = lupper[i + 1];
 
-	free(llower);
 	free(lupper);
+	free(llower);
 	free(xsorted);
 
 	return ui + li - 2;
