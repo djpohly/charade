@@ -91,7 +91,7 @@ static double vector_dot(struct point p, struct point q)
  */
 static double vector_cross(struct point p, struct point q)
 {
-	return vector_dot(p, vector_perp(q));
+	return vector_dot(vector_perp(p), q);
 }
 
 /*
