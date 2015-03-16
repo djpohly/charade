@@ -278,7 +278,7 @@ static void update_display(struct kbd_state *state)
 	for (i = 0; i < state->touches; i++) {
 		XFillArc(state->dpy, state->win, state->gc,
 				state->touchpts[i].x - TOUCH_RADIUS,
-				state->touchpts[i].y - TOUCH_RADIUS,
+				1080 - state->touchpts[i].y - TOUCH_RADIUS,
 				2 * TOUCH_RADIUS, 2 * TOUCH_RADIUS,
 				0, 360 * 64);
 	}
@@ -297,28 +297,28 @@ static void update_display(struct kbd_state *state)
 	struct point *hull = malloc(state->touches * sizeof(hull[0]));
 	int nhull = points_convex_hull(state->touchpts, state->touches, hull);
 	for (i = 0; i < nhull - 1; i++) {
-		XDrawLine(state->dpy, state->win, state->gc, hull[i].x, hull[i].y,
-				hull[i + 1].x, hull[i + 1].y);
+		XDrawLine(state->dpy, state->win, state->gc, hull[i].x, 1080 - hull[i].y,
+				hull[i + 1].x, 1080 - hull[i + 1].y);
 	}
-	XDrawLine(state->dpy, state->win, state->gc, hull[i].x, hull[i].y,
-			hull[0].x, hull[0].y);
+	XDrawLine(state->dpy, state->win, state->gc, hull[i].x, 1080 - hull[i].y,
+			hull[0].x, 1080 - hull[0].y);
 
 	struct point bbox[4];
 	points_oriented_bbox(hull, nhull, bbox);
 	for (i = 0; i < 3; i++) {
-		XDrawLine(state->dpy, state->win, state->gc, bbox[i].x, bbox[i].y,
+		XDrawLine(state->dpy, state->win, state->gc, bbox[i].x, 1080 - bbox[i].y,
 				bbox[i + 1].x,
-				bbox[i + 1].y);
+				1080 - bbox[i + 1].y);
 	}
-	XDrawLine(state->dpy, state->win, state->gc, bbox[3].x, bbox[3].y,
-			bbox[0].x, bbox[0].y);
+	XDrawLine(state->dpy, state->win, state->gc, bbox[3].x, 1080 - bbox[3].y,
+			bbox[0].x, 1080 - bbox[0].y);
 	free(hull);
 
 	// Draw center
 	c = points_bbox_center(state->touchpts, state->touches);
 
 	XFillRectangle(state->dpy, state->win, state->gc,
-			c.x - CENTER_RADIUS, c.y - CENTER_RADIUS,
+			c.x - CENTER_RADIUS, 1080 - c.y - CENTER_RADIUS,
 			2 * CENTER_RADIUS, 2 * CENTER_RADIUS);
 
 	// Print analysis text
@@ -397,7 +397,7 @@ static int handle_xi_event(struct kbd_state *state, XIDeviceEvent *ev)
 					ev->detail, ev->event, XIAcceptTouch);
 
 			// Find and record which button was touched
-			if (add_touch(state, ev->detail, ev->event_x, ev->event_y))
+			if (add_touch(state, ev->detail, ev->event_x, 1080 - ev->event_y))
 				return 1;
 			break;
 
@@ -417,7 +417,7 @@ static int handle_xi_event(struct kbd_state *state, XIDeviceEvent *ev)
 			assert(idx >= 0);
 
 			// Update touch position
-			update_touch(state, idx, ev->event_x, ev->event_y);
+			update_touch(state, idx, ev->event_x, 1080 - ev->event_y);
 			break;
 
 		default:
