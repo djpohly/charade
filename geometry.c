@@ -384,29 +384,35 @@ int points_convex_hull(const struct point *pts, int n, struct point *hull)
 void points_oriented_bbox(const struct point *hull, int n, struct point *rect)
 {
 	int i;
-	int t, b, l, r;
-	t = b = l = r = 0;
 
-	// Basis vectors: standard basis to start
-	struct point basis[2];
-	basis[0] = POINT(1, 0);
-	basis[1] = vector_perp(basis[0]);
+	// Start calipers on standard basis
+	struct point caliper[4];
+	caliper[0] = POINT(1, 0);
+	for (i = 1; i < 4; i++)
+		caliper[i] = vector_perp(caliper[i - 1]);
 
+	// Point indices on the hull which the calipers currently touch
+	int point[4];
+	point[0] = point[1] = point[2] = point[3] = 0;
+
+	// Find initial points
 	for (i = 0; i < n; i++) {
 		int last = (i + n - 1) % n;
 		int next = (i + 1) % n;
-		if (hull[i].x <= hull[last].x && hull[i].x <= hull[next].x)
-			l = i;
-		if (hull[i].x >= hull[last].x && hull[i].x >= hull[next].x)
-			r = i;
-		if (hull[i].y <= hull[last].y && hull[i].y <= hull[next].y)
-			b = i;
 		if (hull[i].y >= hull[last].y && hull[i].y >= hull[next].y)
-			t = i;
+			point[0] = i;
+		if (hull[i].x >= hull[last].x && hull[i].x >= hull[next].x)
+			point[1] = i;
+		if (hull[i].y <= hull[last].y && hull[i].y <= hull[next].y)
+			point[2] = i;
+		if (hull[i].x <= hull[last].x && hull[i].x <= hull[next].x)
+			point[3] = i;
 	}
 
-	rect[0] = vector_intersect(hull[t], bi, hull[l], bj);
-	rect[1] = vector_intersect(hull[t], bi, hull[r], bj);
-	rect[2] = vector_intersect(hull[b], bi, hull[r], bj);
-	rect[3] = vector_intersect(hull[b], bi, hull[l], bj);
+	// Calculate rectangle corners (intersections of calipers)
+	for (i = 0; i < 4; i++) {
+		int j = (i + 1) % 4;
+		rect[i] = vector_intersect(hull[point[i]], caliper[i],
+				hull[point[j]], caliper[j]);
+	}
 }
