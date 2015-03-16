@@ -95,11 +95,35 @@ static double vector_cross(struct point p, struct point q)
 }
 
 /*
+ * Returns the sum of two vectors
+ */
+static struct point vector_add(struct point u, struct point v)
+{
+	return (struct point) {u.x + v.x, u.y + v.y};
+}
+
+/*
  * Returns the difference between two vectors
  */
 static struct point vector_sub(struct point p, struct point q)
 {
 	return (struct point) {p.x - q.x, p.y - q.y};
+}
+
+/*
+ * Multiplies a vector by a scalar
+ */
+static struct point vector_mul(struct point v, double s)
+{
+	return (struct point) {v.x * s, v.y * s};
+}
+
+/*
+ * Divides a vector by a scalar
+ */
+static struct point vector_div(struct point v, double s)
+{
+	return (struct point) {v.x / s, v.y / s};
 }
 
 /*
