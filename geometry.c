@@ -402,13 +402,13 @@ void points_oriented_bbox(const struct point *hull, int n, struct point *rect)
 	for (i = 0; i < n; i++) {
 		int last = (i + n - 1) % n;
 		int next = (i + 1) % n;
-		if (hull[i].y <= hull[last].y && hull[i].y <= hull[next].y)
+		if (hull[i].y < hull[last].y && hull[i].y <= hull[next].y)
 			point[0] = i;
-		if (hull[i].x >= hull[last].x && hull[i].x >= hull[next].x)
+		if (hull[i].x > hull[last].x && hull[i].x >= hull[next].x)
 			point[1] = i;
-		if (hull[i].y >= hull[last].y && hull[i].y >= hull[next].y)
+		if (hull[i].y > hull[last].y && hull[i].y >= hull[next].y)
 			point[2] = i;
-		if (hull[i].x <= hull[last].x && hull[i].x <= hull[next].x)
+		if (hull[i].x < hull[last].x && hull[i].x <= hull[next].x)
 			point[3] = i;
 		hullcal[i] = vector_unit(vector_sub(hull[next], hull[i]));
 	}
