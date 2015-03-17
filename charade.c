@@ -315,7 +315,7 @@ static void update_display(struct kbd_state *state)
 	free(hull);
 
 	// Draw center
-	c = points_bbox_center(state->touchpts, state->touches);
+	c = points_enclosing_center(state->touchpts, state->touches);
 
 	XFillRectangle(state->dpy, state->win, state->gc,
 			c.x - CENTER_RADIUS, 1080 - c.y - CENTER_RADIUS,
