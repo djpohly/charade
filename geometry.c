@@ -398,6 +398,12 @@ void points_oriented_bbox(const struct point *hull, int n, struct point *rect)
 	struct point temp[4];
 	double area;
 
+	if (n == 2) {
+		rect[0] = rect[1] = hull[0];
+		rect[2] = rect[3] = hull[1];
+		return;
+	}
+
 	// Yay VLA, livin' dangerously
 	struct point hullcal[n];
 
