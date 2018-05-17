@@ -473,3 +473,17 @@ void points_oriented_bbox(const struct point *hull, int n, struct point *rect)
 		}
 	}
 }
+
+/*
+ * Calculates the area of the polygon defined by a list of points (given in
+ * counterclockwise order)
+ */
+double polygon_area(const struct point *poly, int n)
+{
+	double area = 0.0;
+	int i, last;
+
+	for (i = 0, last = n - 1; i < n; last = i++)
+		area += (poly[i].x + poly[last].x) * (poly[i].y - poly[last].y);
+	return area / 2;
+}
