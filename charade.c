@@ -322,7 +322,8 @@ static void update_display(struct kbd_state *state)
 			2 * CENTER_RADIUS, 2 * CENTER_RADIUS);
 
 	// Print analysis text
-	i = snprintf(str, 256, "C: (%.1f, %.1f)", c.x, c.y);
+	int area = (int) polygon_area(hull, nhull);
+	i = snprintf(str, 256, "C = (%.1f, %.1f)   A = %d", c.x, c.y, area);
 	XftDrawStringUtf8(state->draw, &state->textclr, state->font, 0, sheight - 60,
 			(XftChar8 *) str, i);
 }
