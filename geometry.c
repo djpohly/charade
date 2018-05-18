@@ -127,11 +127,20 @@ static struct point vector_div(struct point v, double s)
 }
 
 /*
- * Returns the magnitude of a vector
+ * Returns the square of the magnitude of a vector
+ */
+static double vector_norm2(struct point v)
+{
+	return vector_dot(v, v);
+}
+
+/*
+ * Returns the magnitude of a vector (costly, use only when vector_norm2 is not
+ * feasible)
  */
 static double vector_norm(struct point v)
 {
-	return sqrt(vector_dot(v, v));
+	return sqrt(vector_norm2(v));
 }
 
 /*
@@ -161,11 +170,20 @@ static struct point vector_intersect(struct point p, struct point r,
 }
 
 /*
- * Returns the distance between two points
+ * Returns the square of the distance between two points
+ */
+static double point_distance2(struct point p, struct point q)
+{
+	return vector_norm2(vector_sub(q, p));
+}
+
+/*
+ * Returns the distance between two points (costly, use only when
+ * point_distance2 is not feasible)
  */
 static double point_distance(struct point p, struct point q)
 {
-	return vector_norm(vector_sub(q, p));
+	return sqrt(point_distance2(p, q));
 }
 
 /*
@@ -182,7 +200,7 @@ static double points_par_area(struct point p, struct point q, struct point r)
  */
 static int circle_contains(const struct circle *c, struct point p)
 {
-	return point_distance(c->c, p) <= c->r;
+	return point_distance2(c->c, p) <= c->r * c->r;
 }
 
 /*
