@@ -9,7 +9,7 @@ struct point {
 
 struct circle {
 	struct point c;
-	double r;
+	double r2;
 };
 
 struct point points_centroid(const struct point *pts, int n);

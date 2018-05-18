@@ -200,7 +200,7 @@ static double points_par_area(struct point p, struct point q, struct point r)
  */
 static int circle_contains(const struct circle *c, struct point p)
 {
-	return point_distance2(c->c, p) <= c->r * c->r;
+	return point_distance2(c->c, p) <= c->r2;
 }
 
 /*
@@ -224,7 +224,7 @@ static void circle_from_diameter(struct point p, struct point q,
 {
 	c->c.x = (p.x + q.x) / 2;
 	c->c.y = (p.y + q.y) / 2;
-	c->r = point_distance(p, q) / 2;
+	c->r2 = point_distance2(c->c, p);
 }
 
 /*
@@ -235,7 +235,7 @@ static void circle_circumscribe(struct point p, struct point q, struct point r,
 {
 	double d = (vector_cross(p, q) + vector_cross(q, r) + vector_cross(r, p)) * 2;
 	if (d == 0) {
-		c->c.x = c->c.y = c->r = 0;
+		c->c.x = c->c.y = c->r2 = 0;
 		return;
 	}
 	c->c.x = (vector_dot(p, p) * (q.y - r.y) +
@@ -244,7 +244,7 @@ static void circle_circumscribe(struct point p, struct point q, struct point r,
 	c->c.y = (vector_dot(p, p) * (r.x - q.x) +
 			vector_dot(q, q) * (p.x - r.x) +
 			vector_dot(r, r) * (q.x - p.x)) / d;
-	c->r = point_distance(p, c->c);
+	c->r2 = point_distance2(p, c->c);
 }
 
 static void circle_2points(const struct point *pts, int n,
@@ -262,28 +262,28 @@ static void circle_2points(const struct point *pts, int n,
 
 	struct point pq = vector_sub(q, p);;
 
-	temp.r = temp2.r = 0;
+	temp.r2 = temp2.r2 = 0;
 	for (i = 0; i < n; i++) {
 		struct point pr = vector_sub(pts[i], p);;
 
 		double cross = vector_cross(pq, pr);
 		struct circle cc;
 		circle_circumscribe(p, q, pts[i], &cc);
-		if (cc.r == 0)
+		if (cc.r2 == 0)
 			continue;
 
 		struct point pc = vector_sub(cc.c, p);
 
-		if (cross > 0 && (temp.r == 0 || vector_cross(pq, pc) > vector_cross(pq, vector_sub(temp.c, p))))
+		if (cross > 0 && (temp.r2 == 0 || vector_cross(pq, pc) > vector_cross(pq, vector_sub(temp.c, p))))
 			temp = cc;
-		else if (cross < 0 && (temp2.r == 0 || vector_cross(pq, pc) < vector_cross(pq, vector_sub(temp2.c, p))))
+		else if (cross < 0 && (temp2.r2 == 0 || vector_cross(pq, pc) < vector_cross(pq, vector_sub(temp2.c, p))))
 			temp2 = cc;
 	}
-	if (temp2.r == 0)
+	if (temp2.r2 == 0)
 		*c = temp;
-	else if (temp.r == 0)
+	else if (temp.r2 == 0)
 		*c = temp2;
-	else if (temp.r <= temp2.r)
+	else if (temp.r2 <= temp2.r2)
 		*c = temp;
 	else
 		*c = temp2;
@@ -294,12 +294,12 @@ static void circle_1point(const struct point *pts, int n, struct point p,
 {
 	int i;
 	c->c = p;
-	c->r = 0;
+	c->r2 = 0;
 
 	for (i = 0; i < n; i++) {
 		if (circle_contains(c, pts[i]))
 			continue;
-		if (c->r == 0)
+		if (c->r2 == 0)
 			circle_from_diameter(p, pts[i], c);
 		else
 			circle_2points(pts, i, p, pts[i], c);
