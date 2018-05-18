@@ -1,4 +1,6 @@
-CFLAGS = -g -std=c99 -Wall -Wextra -Wpedantic -Werror -Wno-unused-function -O2
+CFLAGS = -g -Wall -Wextra -Wpedantic -Werror -Wno-unused-function -O3
+override CFLAGS += -std=c99 $(shell pkg-config --cflags x11) $(shell pkg-config --cflags xft) $(shell pkg-config --cflags xi)
+override LDLIBS += $(shell pkg-config --libs x11) $(shell pkg-config --libs xft) $(shell pkg-config --libs xi) -lm
 
 BINS = charade
 OBJS = charade.o geometry.o
@@ -11,9 +13,7 @@ clean:
 	$(RM) $(BINS) $(OBJS)
 
 charade: charade.o geometry.o
-charade: LDLIBS+=$(shell pkg-config --libs x11) $(shell pkg-config --libs xft) $(shell pkg-config --libs xi) -lm
 
 charade.o: charade.h geometry.h
-charade.o: CFLAGS+=$(shell pkg-config --cflags x11) $(shell pkg-config --cflags xft) $(shell pkg-config --cflags xi)
 
 geometry.o: geometry.h
