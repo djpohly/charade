@@ -426,10 +426,8 @@ void points_oriented_bbox(const struct point *hull, int n, struct point *rect)
 	struct point hullcal[n];
 
 	// Start calipers on standard basis
-	struct point caliper[4];
-	caliper[0] = POINT(1, 0);
-	for (i = 1; i < 4; i++)
-		caliper[i] = vector_perp(caliper[i - 1]);
+	struct point caliper[4] = {POINT(1, 0), POINT(0, 1), POINT(-1, 0),
+		POINT(0, -1)};
 
 	// Find points on the hull which the initial calipers touch.  While
 	// we're at it, calculate caliper vectors for each edge of the hull.
