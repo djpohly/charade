@@ -154,8 +154,8 @@ static struct point vector_unit(struct point v)
 }
 
 /*
- * Returns the intersection point of the line passing through u0 in the
- * direction of u and the line passing through v0 in the direction of v
+ * Returns the intersection point of the line passing through p in the
+ * direction of r and the line passing through q in the direction of s
  *
  * Formula credited to Ronald Goldman here:
  *
