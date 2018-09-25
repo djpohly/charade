@@ -1,4 +1,5 @@
 CFLAGS = -g -Wall -Wextra -Wpedantic -Werror -Wno-unused-function -O3
+LDFLAGS = -g
 override CFLAGS += -std=c99 $(shell pkg-config --cflags x11) $(shell pkg-config --cflags xft) $(shell pkg-config --cflags xi)
 override LDLIBS += $(shell pkg-config --libs x11) $(shell pkg-config --libs xft) $(shell pkg-config --libs xi) -lm
 
