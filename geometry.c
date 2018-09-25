@@ -451,7 +451,7 @@ void points_oriented_bbox(const struct point *hull, int n, struct point *rect)
 	// radians at most, which is done when the X component of the caliper
 	// that started as (1, 0) hits zero.
 	while (caliper[0].x > 0) {
-		// Find caliper with minimum angle to next point - since the
+		// Find caliper with minimum angle to next hull edge - since the
 		// angles are all between 0 and pi, this is the one with the
 		// maximum cosine
 		int cal = 0;
