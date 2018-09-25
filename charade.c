@@ -7,7 +7,9 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/XInput2.h>
+#ifdef XFT_TEXT
 #include <X11/Xft/Xft.h>
+#endif
 #include <assert.h>
 
 #include "charade.h"
@@ -214,9 +216,10 @@ static void destroy_window(struct kbd_state *state)
  */
 static int setup_draw(struct kbd_state *state)
 {
-	XRenderColor xrc;
-
 	state->gc = XCreateGC(state->dpy, state->win, 0, NULL);
+
+#ifdef XFT_TEXT
+	XRenderColor xrc;
 	state->draw = XftDrawCreate(state->dpy, state->win, state->xvi.visual,
 			state->cmap);
 	if (!state->draw) {
@@ -237,9 +240,11 @@ static int setup_draw(struct kbd_state *state)
 		fprintf(stderr, "Couldn't load Xft font\n");
 		goto err_free_color;
 	}
+#endif
 	return 0;
 
 
+#ifdef XFT_TEXT
 err_free_color:
 	XftColorFree(state->dpy, state->xvi.visual, state->cmap, &state->textclr);
 err_destroy_draw:
@@ -247,6 +252,7 @@ err_destroy_draw:
 err_free_gc:
 	XFreeGC(state->dpy, state->gc);
 	return 1;
+#endif
 }
 
 /*
@@ -254,9 +260,11 @@ err_free_gc:
  */
 static void cleanup_draw(struct kbd_state *state)
 {
+#ifdef XFT_TEXT
 	XftFontClose(state->dpy, state->font);
 	XftColorFree(state->dpy, state->xvi.visual, state->cmap, &state->textclr);
 	XftDrawDestroy(state->draw);
+#endif
 	XFreeGC(state->dpy, state->gc);
 }
 
@@ -267,9 +275,11 @@ static void update_display(struct kbd_state *state)
 {
 	int i;
 	struct point c;
+#ifdef XFT_TEXT
 	char str[256];
 	Screen *scr = DefaultScreenOfDisplay(state->dpy);
 	int sheight = HeightOfScreen(scr);
+#endif
 
 	XClearWindow(state->dpy, state->win);
 
@@ -284,9 +294,13 @@ static void update_display(struct kbd_state *state)
 	}
 
 	// Print calculated data
+#ifdef XFT_TEXT
 	i = snprintf(str, 256, "Touches: %d", state->touches);
 	XftDrawStringUtf8(state->draw, &state->textclr, state->font, 0, sheight - 10,
 			(XftChar8 *) str, i);
+#else
+	printf("Touches: %d\n", state->touches);
+#endif
 
 	if (state->touches < 2)
 		return;
@@ -323,9 +337,13 @@ static void update_display(struct kbd_state *state)
 
 	// Print analysis text
 	int area = (int) polygon_area(hull, nhull);
+#ifdef XFT_TEXT
 	i = snprintf(str, 256, "C = (%.1f, %.1f)   A = %d", c.x, c.y, area);
 	XftDrawStringUtf8(state->draw, &state->textclr, state->font, 0, sheight - 60,
 			(XftChar8 *) str, i);
+#else
+	printf("C = (%.1f, %.1f)\tA = %d\n", c.x, c.y, area);
+#endif
 }
 
 /*

@@ -22,6 +22,7 @@
 		.alpha = 0xffff, \
 	})
 
+#undef XFT_TEXT
 #define TEXT_FONT "Consolas:pixelsize=50"
 
 /*
