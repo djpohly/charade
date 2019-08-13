@@ -4,7 +4,9 @@
 #include <stdint.h>
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#ifdef XFT_TEXT
 #include <X11/Xft/Xft.h>
+#endif
 
 #include "geometry.h"
 
@@ -22,7 +24,6 @@
 		.alpha = 0xffff, \
 	})
 
-#undef XFT_TEXT
 #define TEXT_FONT "Consolas:pixelsize=50"
 
 /*
@@ -34,9 +35,11 @@ struct kbd_state {
 	Colormap cmap;
 	Window win;
 	GC gc;
+#ifdef XFT_TEXT
 	XftFont *font;
 	XftDraw *draw;
 	XftColor textclr;
+#endif
 	struct point *touchpts;
 	int *touchids;
 	int nslots;
