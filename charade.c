@@ -310,6 +310,8 @@ static void update_display(struct kbd_state *state)
 	// Draw convex hull and bounding box
 	struct point *hull = malloc(state->touches * sizeof(hull[0]));
 	int nhull = points_convex_hull(state->touchpts, state->touches, hull);
+	int area = (int) polygon_area(hull, nhull);
+
 	for (i = 0; i < nhull - 1; i++) {
 		XDrawLine(state->dpy, state->win, state->gc, hull[i].x, 1080 - hull[i].y,
 				hull[i + 1].x, 1080 - hull[i + 1].y);
@@ -336,7 +338,6 @@ static void update_display(struct kbd_state *state)
 			2 * CENTER_RADIUS, 2 * CENTER_RADIUS);
 
 	// Print analysis text
-	int area = (int) polygon_area(hull, nhull);
 #ifdef XFT_TEXT
 	i = snprintf(str, 256, "C = (%.1f, %.1f)   A = %d", c.x, c.y, area);
 	XftDrawStringUtf8(state->draw, &state->textclr, state->font, 0, sheight - 60,
